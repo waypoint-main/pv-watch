@@ -1,7 +1,3 @@
-# apt packages for Streamlit Community Cloud's build container.
-# geopandas/fiona/pyproj generally ship prebuilt manylinux wheels and don't
-# strictly need these, but GDAL/GEOS/PROJ system libraries are kept here as
-# a safety net so a wheel-less fallback build still succeeds.
 gdal-bin
 libgdal-dev
 libspatialindex-dev

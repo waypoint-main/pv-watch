@@ -1,0 +1,33 @@
+# PV Watch — Distributed Solar Change Intelligence
+# Core application framework
+# 1.36 is required for st.navigation / st.Page (used for the custom, fully
+# reorderable/groupable sidebar nav in app.py) — bumped from 1.32.
+streamlit>=1.36,<2.0
+
+# Geospatial stack
+geopandas>=0.14,<1.1
+shapely>=2.0,<3.0
+fiona>=1.9,<1.10
+pyproj>=3.6,<4.0
+
+# KML/KMZ parsing
+pykml>=0.2.0
+lxml>=4.9
+
+# Data handling
+pandas>=2.0,<3.0
+numpy>=1.24,<2.1
+
+# Mapping and visualization
+folium>=0.15,<0.17
+streamlit-folium>=0.18,<0.24
+plotly>=5.18,<6.0
+
+# Structured data models
+pydantic>=2.5,<3.0
+
+# Config
+PyYAML>=6.0,<7.0
+
+# Testing
+pytest>=7.4,<9.0

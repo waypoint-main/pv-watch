@@ -1,0 +1,109 @@
+# PV Watch configuration
+# -----------------------------------------------------------------------------
+# These are INITIAL DEMONSTRATION ASSUMPTIONS, not scientifically validated
+# thresholds. They are intentionally exposed here (rather than hard-coded)
+# so a reviewer can see, question, and adjust every analytical assumption the
+# application makes. See pages/5_Methodology.py for a full explanation.
+# -----------------------------------------------------------------------------
+
+app:
+  name: "PV Watch"
+  tagline: "Distributed Solar Change Intelligence"
+  version: "0.1.0-mvp"
+  observation_year_baseline: 2020
+  observation_year_latest: 2025
+  # Placeholder dates used when a KMZ does not carry a per-feature date.
+  # These represent the nominal imagery/annotation capture period, not a
+  # claim about when any individual PV system was installed.
+  observation_date_baseline: "2020-06-30"
+  observation_date_latest: "2025-06-30"
+
+data_sources:
+  # Optional local folders of real, per-barangay KMZ files. If both folders
+  # exist and contain at least one .kmz file, PV Watch loads and merges
+  # every file in each folder into one baseline/latest inventory
+  # automatically on startup — no upload step required. Paths are relative
+  # to the project root.
+  local_kmz_2020_dir: "output-kmz/2020"
+  local_kmz_2025_dir: "output-kmz/2025"
+  default_municipality: "Santa Rosa, Laguna"
+  # Static regional label for the PV Reporting page's province-level rollup.
+  province: "Laguna"
+
+crs:
+  # Geographic CRS used for storage/interchange and map display.
+  geographic_crs: "EPSG:4326"
+  # If null, the app auto-selects a UTM zone from the dataset centroid.
+  default_projected_crs: null
+  # Fallback projected CRS for the Philippines (UTM zone 51N) used only if
+  # auto-selection fails.
+  fallback_projected_crs: "EPSG:32651"
+
+installation_grouping:
+  # Heuristic grouping of individual array polygons into one "installation".
+  # This is a DEMONSTRATION HEURISTIC ONLY. When authoritative building or
+  # parcel footprints are unavailable (as in this MVP), proximity-based
+  # grouping can both over-merge (two separate customers' roofs that are close
+  # together) and under-merge (one customer's arrays split across roof
+  # planes). Always validate grouped installations before operational use.
+  grouping_distance_m: 5.0
+  use_parcel_id_when_available: true
+  parcel_id_field: "parcel_id"
+
+change_detection:
+  minimum_iou_match: 0.30
+  minimum_overlap_ratio: 0.50
+  maximum_centroid_distance_m: 10.0
+  stable_area_change_ratio: 0.20
+  expansion_area_change_ratio: 0.30
+  grouping_distance_m: 5.0
+  # Match scores within this band of the minimum thresholds are treated as
+  # "uncertain" rather than confidently classified.
+  uncertainty_margin: 0.08
+  # More than one plausible candidate match within this IoU of the best match
+  # triggers an "uncertain" classification (ambiguous many-to-many geometry).
+  ambiguous_secondary_match_margin: 0.10
+
+capacity_estimation:
+  # DEMO DEFAULT ONLY. Actual capacity depends on module efficiency, panel
+  # dimensions, roof layout, tilt, spacing, obstructions, and technology type.
+  # 1 kWp of crystalline-silicon PV typically occupies roughly 5-7 m^2;
+  # this demo uses a simple mid-range factor for illustration purposes only.
+  kw_per_m2: 0.17
+  large_system_capacity_kw: 15.0
+
+alert_engine:
+  # Priority scoring weights (higher = more influence on operational priority)
+  weights:
+    newly_observed: 3
+    expanded: 2
+    uncertain: 1
+    no_registry_match: 2
+    capacity_exceeds_registered: 3
+    large_installation: 2
+    transformer_cluster: 2
+    low_detection_confidence: 1
+    network_review_recommended: 2
+  large_installation_area_m2: 90.0
+  cluster_new_installation_count: 3
+  # Score cut points mapping the weighted total to a priority tier.
+  priority_1_min_score: 7
+  priority_2_min_score: 5
+  priority_3_min_score: 3
+  # Anything below priority_3_min_score falls to Priority 4.
+
+registry_matching:
+  # Distance within which a registry point is considered a plausible spatial
+  # match to an observed installation centroid.
+  spatial_match_distance_m: 15.0
+  probable_match_distance_m: 40.0
+
+synthetic_demo:
+  seed: 42
+  baseline_installation_count: 34
+  latest_installation_count: 52
+  town_name: "Barangay Sinalhan (synthetic demo area)"
+  # Approximate center used only to place synthetic geometry in a
+  # realistic Philippine urban context (Santa Rosa, Laguna vicinity).
+  center_lat: 14.2856
+  center_lon: 121.0997

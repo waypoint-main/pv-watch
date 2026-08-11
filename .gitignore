@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.Python
+build/
+dist/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Project runtime artifacts
+data/processed/*
+!data/processed/.gitkeep
+data/uploads/*
+!data/uploads/.gitkeep
+*.log
+review_decisions.json
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Marketing collateral (not app source)
+my_startup-pitch_deck.pdf
+my_startup-pitch_deck/

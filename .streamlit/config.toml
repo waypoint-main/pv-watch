@@ -1,0 +1,19 @@
+[theme]
+base = "light"
+primaryColor = "#0F5E7A"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F7F5"
+textColor = "#141414"
+# theme.font (and theme.codeFont) are what actually reach widget labels,
+# tooltips, column headers, and st.dataframe cells — those are rendered by
+# Streamlit's own React/canvas widgets, which CSS injected via st.markdown
+# cannot touch. Inter / JetBrains Mono here match the FONT_STACK / MONO_STACK
+# used in src/ui_components.py's injected CSS (Waypoint design language), so
+# the native controls (including dataframe grids) and our custom HTML use
+# the same typefaces. Syntax: "{font_name}:{css_url}, {fallback}" per
+# Streamlit's externally-hosted-fonts theming docs.
+font = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap, sans-serif"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap, monospace"
+
+[server]
+maxUploadSize = 50

@@ -249,21 +249,22 @@ def inject_base_style() -> None:
         /* Flat, solid ink — no gradient/glow — reads closer to a precise,
            structured masthead than a decorative SaaS hero. */
         .pv-header-banner {{
-            background: {INK}; border-radius: 10px; padding: 1.4rem 1.7rem; margin-bottom: 1.1rem;
-            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+            background: {INK}; border-radius: 12px; padding: 2.1rem 2.4rem; margin-bottom: 1.4rem;
+            min-height: 108px;
+            display: flex; align-items: center; gap: 1.3rem; flex-wrap: wrap;
         }}
         .pv-header-icon {{
-            flex: 0 0 auto; width: 44px; height: 44px; border-radius: 8px;
+            flex: 0 0 auto; width: 58px; height: 58px; border-radius: 10px;
             background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center;
             color: {ACCENT};
         }}
         .pv-header-text {{ flex: 1 1 auto; min-width: 240px; }}
-        .pv-header-title {{ font-size: 1.6rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.01em; line-height: 1.15; }}
-        .pv-header-tagline {{ font-size: 0.94rem; color: #C9CCCF; margin-top: 0.15rem; font-weight: 500; }}
+        .pv-header-title {{ font-size: 2.05rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.01em; line-height: 1.15; }}
+        .pv-header-tagline {{ font-size: 1.02rem; color: #C9CCCF; margin-top: 0.25rem; font-weight: 500; }}
         .pv-page-pill {{
             flex: 0 0 auto; align-self: center; background: rgba(255,255,255,0.1); color: #EDEDED;
-            border: 1px solid rgba(255,255,255,0.22); border-radius: 4px; padding: 6px 14px;
-            font-size: 0.8rem; font-weight: 600; white-space: nowrap; letter-spacing: 0.01em;
+            border: 1px solid rgba(255,255,255,0.22); border-radius: 4px; padding: 8px 16px;
+            font-size: 0.84rem; font-weight: 600; white-space: nowrap; letter-spacing: 0.01em;
         }}
 
         /* ---------- Section headers ---------- */
@@ -430,7 +431,7 @@ def render_app_header(config: AppConfig, page_subtitle: Optional[str] = None) ->
     render_html(
         f"""
         <div class="pv-header-banner">
-            <div class="pv-header-icon">{_icon_svg("sun", size=24, color=ACCENT)}</div>
+            <div class="pv-header-icon">{_icon_svg("sun", size=30, color=ACCENT)}</div>
             <div class="pv-header-text">
                 <div class="pv-header-title">{config.app.name}</div>
                 <div class="pv-header-tagline">{config.app.tagline}</div>

@@ -12,7 +12,7 @@ municipality/barangay (geographic rollup for coordination with local units).
 Note on scope: this page supports *distribution planning* (where is new PV
 concentrating, which transformers/feeders need a closer look). It does not
 do *load forecasting* — that requires a time series of observations, and
-PV Watch currently only has two snapshots (baseline and latest). See the
+Solance currently only has two snapshots (baseline and latest). See the
 caption below the header for the honest version of that limitation.
 """
 
@@ -60,13 +60,13 @@ def _transformer_marker_size(rated_kva: float) -> int:
             return size
     return _TRANSFORMER_MARKER_TIERS[-1][1]
 
-st.set_page_config(page_title="PV Watch — Distribution Planning", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Distribution Planning", page_icon="☀️", layout="wide")
 config = load_config()
 render_app_header(config, "Distribution Planning")
 
 result = get_pipeline_result()
 if result is None:
-    st.info("Choose a data source on the main **PV Watch** page first (demo data or upload two KMZ files).")
+    st.info("Choose a data source on the main **Solance** page first (demo data or upload two KMZ files).")
     st.stop()
 
 render_synthetic_data_notice("feeder, transformer, and registered-capacity")
@@ -76,7 +76,7 @@ render_disclaimer(
 )
 st.caption(
     "This page supports **distribution planning** (where new PV is concentrating, by transformer_id / feeder_id / "
-    "installation_id). It does not do **load forecasting** — PV Watch currently compares two snapshots "
+    "installation_id). It does not do **load forecasting** — Solance currently compares two snapshots "
     f"({config.app.observation_year_baseline} and {config.app.observation_year_latest}), which isn't enough "
     "history to project future load. A production deployment ingesting imagery on a regular cadence could add "
     "true trend-based forecasting; this demo doesn't overstate what two data points can support."

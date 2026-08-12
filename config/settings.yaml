@@ -1,4 +1,4 @@
-# PV Watch configuration
+# Solance configuration
 # -----------------------------------------------------------------------------
 # These are INITIAL DEMONSTRATION ASSUMPTIONS, not scientifically validated
 # thresholds. They are intentionally exposed here (rather than hard-coded)
@@ -7,7 +7,7 @@
 # -----------------------------------------------------------------------------
 
 app:
-  name: "PV Watch"
+  name: "Solance"
   tagline: "Distributed Solar Change Intelligence"
   version: "0.1.0-mvp"
   observation_year_baseline: 2020
@@ -20,7 +20,7 @@ app:
 
 data_sources:
   # Optional local folders of real, per-barangay KMZ files. If both folders
-  # exist and contain at least one .kmz file, PV Watch loads and merges
+  # exist and contain at least one .kmz file, Solance loads and merges
   # every file in each folder into one baseline/latest inventory
   # automatically on startup — no upload step required. Paths are relative
   # to the project root.

@@ -1,4 +1,4 @@
-# PV Watch — Distributed Solar Change Intelligence
+# Solance — Distributed Solar Change Intelligence
 # Core application framework
 # 1.36 is required for st.navigation / st.Page (used for the custom, fully
 # reorderable/groupable sidebar nav in app.py) — bumped from 1.32.

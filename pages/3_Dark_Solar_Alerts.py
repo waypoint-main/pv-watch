@@ -1,6 +1,6 @@
 """Page 3 — Dark Solar Alerts (Alert Inbox).
 
-This page is where PV Watch's "dark solar" outcome lives: a PV system is
+This page is where Solance's "dark solar" outcome lives: a PV system is
 called **dark solar** when it's visible in imagery but not yet confirmed
 registered with the utility. Two tabs drive the two distinct actions here:
 **Queue** (triage — filter, sort, scan, export) and **Review & Decide**
@@ -54,13 +54,13 @@ from src.ui_components import (
     section_title,
 )
 
-st.set_page_config(page_title="PV Watch — Dark Solar Alerts", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Dark Solar Alerts", page_icon="☀️", layout="wide")
 config = load_config()
 render_app_header(config, "Dark Solar Alerts")
 
 result = get_pipeline_result()
 if result is None:
-    st.info("Choose a data source on the main **PV Watch** page first (demo data or upload two KMZ files).")
+    st.info("Choose a data source on the main **Solance** page first (demo data or upload two KMZ files).")
     st.stop()
 
 alerts_df = apply_decisions_to_alerts(result.alerts_df)
@@ -119,7 +119,7 @@ kpi_row(
 )
 st.caption(
     "In a production deployment, every case reaching **Registered** would be written back to the utility's own "
-    "registration inventory — closing the loop shown in the PV Watch workflow, from paper-based registration "
+    "registration inventory — closing the loop shown in the Solance workflow, from paper-based registration "
     "records through to a confirmed, geo-located entry."
 )
 

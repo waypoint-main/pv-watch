@@ -37,13 +37,13 @@ from src.ui_components import (
     size_class,
 )
 
-st.set_page_config(page_title="PV Watch — PV Change Explorer", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — PV Change Explorer", page_icon="☀️", layout="wide")
 config = load_config()
 render_app_header(config, "PV Change Explorer")
 
 result = get_pipeline_result()
 if result is None:
-    st.info("Choose a data source on the main **PV Watch** page first (demo data or upload two KMZ files).")
+    st.info("Choose a data source on the main **Solance** page first (demo data or upload two KMZ files).")
     st.stop()
 
 explorer = build_explorer_table(result, apply_decisions_to_alerts(result.alerts_df))

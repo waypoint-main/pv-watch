@@ -39,7 +39,7 @@ def dataframe_to_csv_bytes(df: pd.DataFrame, metadata: ExportMetadata | None = N
     """Serialize a DataFrame to CSV bytes with a metadata header block."""
     lines = []
     if metadata is not None:
-        lines.append("# PV Watch export metadata")
+        lines.append("# Solance export metadata")
         for k, v in metadata.to_dict().items():
             if k == "threshold_config":
                 lines.append(f"# threshold_config: {json.dumps(v)}")

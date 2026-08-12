@@ -1,4 +1,4 @@
-"""KMZ/KML ingestion and normalization into the PV Watch observation schema.
+"""KMZ/KML ingestion and normalization into the Solance observation schema.
 
 KMZ files are just zip archives containing a KML document (plus optional
 images/overlays). We parse the KML directly with ``lxml`` rather than
@@ -56,7 +56,7 @@ def _parse_coordinates(text: str) -> list[tuple[float, float]]:
     """Parse a KML <coordinates> text blob into a list of (lon, lat) tuples.
 
     KML coordinates are "lon,lat[,alt]" tuples separated by whitespace. We
-    intentionally drop altitude — PV Watch works in 2D plan-view geometry.
+    intentionally drop altitude — Solance works in 2D plan-view geometry.
     """
     coords = []
     for token in text.split():
@@ -162,7 +162,7 @@ def parse_kml_placemarks(kml_bytes: bytes) -> tuple[list[dict], list[str], int]:
             if other_geoms:
                 warnings.append(
                     f"Placemark '{name}' has unsupported geometry type(s) {other_geoms} and was skipped "
-                    f"(PV Watch only ingests Polygon/MultiPolygon features)."
+                    f"(Solance only ingests Polygon/MultiPolygon features)."
                 )
             continue
 
@@ -281,7 +281,7 @@ def load_kmz_observations(
     if not records:
         raise KmzLoadError(
             "No usable Polygon/MultiPolygon placemarks were found in this KMZ. "
-            "PV Watch expects rooftop PV footprints digitized as polygons."
+            "Solance expects rooftop PV footprints digitized as polygons."
         )
 
     df = pd.DataFrame(records)
@@ -343,7 +343,7 @@ def load_kmz_folder_observations(
     """Load and merge every ``.kmz`` file in a local folder into one inventory.
 
     Used for the "local output-kmz folder" data source: instead of requiring
-    a single upload, PV Watch scans ``folder_path`` for per-barangay KMZ
+    a single upload, Solance scans ``folder_path`` for per-barangay KMZ
     files (e.g. ``2020_Brgy_Sinalhan.kmz``), parses each one, tags every
     array polygon with the barangay name derived from its filename (more
     accurate than a synthetic spatial-zone join), and concatenates them into

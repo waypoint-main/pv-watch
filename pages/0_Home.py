@@ -6,9 +6,9 @@ become a thin ``st.navigation`` router with full control over the sidebar
 ``pages/`` navigation. See ``app.py`` for the page list and sidebar chrome —
 this file only handles data-source selection and pipeline kick-off. All
 analytical logic lives in ``src/`` and all page-specific UI lives in
-``pages/`` — see those modules for the actual PV Watch functionality.
+``pages/`` — see those modules for the actual Solance functionality.
 
-PV Watch automatically loads the local ``output-kmz/2020`` and
+Solance automatically loads the local ``output-kmz/2020`` and
 ``output-kmz/2025`` folders (every per-barangay .kmz file merged into one
 inventory per year) if present — no upload required. Synthetic demo data and
 manual KMZ upload remain available as alternatives.
@@ -32,7 +32,7 @@ from src.ui_components import (
     section_title,
 )
 
-st.set_page_config(page_title="PV Watch", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance", page_icon="☀️", layout="wide")
 
 config = load_config()
 render_app_header(config)
@@ -43,10 +43,10 @@ render_disclaimer(
     "interconnection status."
 )
 
-# --- What PV Watch delivers (3-pillar value story) -----------------------------
-# Mirrors the utility's own inputs -> PV Watch -> outcomes workflow: this is
+# --- What Solance delivers (3-pillar value story) -----------------------------
+# Mirrors the utility's own inputs -> Solance -> outcomes workflow: this is
 # the first thing a reviewer sees, before picking a data source.
-section_title("What PV Watch delivers", "Three inputs — registration records, satellite imagery, feeder/transformer data — feed one workflow with three outcomes.")
+section_title("What Solance delivers", "Three inputs — registration records, satellite imagery, feeder/transformer data — feed one workflow with three outcomes.")
 pillar1, pillar2, pillar3 = st.columns(3)
 
 with pillar1:
@@ -72,7 +72,7 @@ with pillar2:
             <b>Distribution planning intelligence</b>
             <p style="color:#5B6B76;font-size:0.85rem;margin-top:0.4rem;">
                 See new and existing PV by transformer_id / feeder_id / installation_id to support distribution
-                planning decisions. (Load <i>forecasting</i> needs a time series PV Watch doesn't have yet with
+                planning decisions. (Load <i>forecasting</i> needs a time series Solance doesn't have yet with
                 only two observation years — see Distribution Planning for details.)
             </p>
         </div>
@@ -162,7 +162,7 @@ else:  # upload
 
     with st.expander("Advanced: projected CRS for area calculation"):
         st.caption(
-            "PV Watch auto-selects an appropriate UTM zone from your data's centroid for area/distance "
+            "Solance auto-selects an appropriate UTM zone from your data's centroid for area/distance "
             "calculations. Override it here only if you need a specific projected CRS (e.g. a local grid)."
         )
         crs_input = st.text_input("Projected CRS (e.g. EPSG:32651)", value="", key="crs_override_input")

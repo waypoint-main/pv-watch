@@ -1,4 +1,4 @@
-"""PV Watch — Distributed Solar Change Intelligence.
+"""Solance — Distributed Solar Change Intelligence.
 
 Modular source package. Each module has a single, focused responsibility so
 that later phases (real KMZ ingestion, richer registry integration, database

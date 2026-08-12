@@ -1,4 +1,4 @@
-"""PV Watch — entrypoint / navigation router.
+"""Solance — entrypoint / navigation router.
 
 This file no longer holds page content (that moved to ``pages/0_Home.py``).
 It now only does two things, per Streamlit's ``st.navigation`` pattern
@@ -13,7 +13,7 @@ around each of your pages"):
    nav list using ``st.page_link`` — grouped, spaced, and labeled exactly
    as requested, which ``st.page_link`` supports because its ``label``
    accepts GitHub-flavored Markdown (bold, etc.) — followed by the
-   PV Watch / Waypoint brand credit block, anchored to the bottom of the
+   Solance / Waypoint brand credit block, anchored to the bottom of the
    sidebar rather than the top.
 
 Requires Streamlit >= 1.36 (``st.navigation``/``st.Page`` — see

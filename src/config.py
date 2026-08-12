@@ -1,4 +1,4 @@
-"""Centralized configuration loading for PV Watch.
+"""Centralized configuration loading for Solance.
 
 All analytical thresholds, capacity assumptions, and scoring weights live in
 ``config/settings.yaml`` rather than being hard-coded throughout the
@@ -21,7 +21,7 @@ DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "setti
 
 @dataclass(frozen=True)
 class AppMeta:
-    name: str = "PV Watch"
+    name: str = "Solance"
     tagline: str = "Distributed Solar Change Intelligence"
     version: str = "0.1.0-mvp"
     observation_year_baseline: int = 2020
@@ -92,7 +92,7 @@ class SyntheticDemoConfig:
 class LocalDataSourcesConfig:
     """Optional local folders of real, per-barangay KMZ files.
 
-    When these folders exist, PV Watch can load and merge every ``.kmz`` file
+    When these folders exist, Solance can load and merge every ``.kmz`` file
     in them into one baseline/latest inventory automatically — no upload
     step required. Paths are relative to the project root.
     """

@@ -159,6 +159,20 @@ _SYNTHETIC_NOTES: dict[ReviewAction, str] = {
 
 _SYNTHETIC_ASSIGNEES = ["J. Santos (Field Ops)", "M. Reyes (Registration Desk)", "A. Cruz (Technical Review)"]
 
+# A queue where a large share of alerts turn out to be false positives reads
+# as a noisy, low-quality detector — not the impression a demo should give.
+# The per-alert weighted draw above is kept for realistic variety across the
+# other states, but the number of alerts actually landing on "False
+# positive" is capped low (0-2) across the whole synthetic queue; any draw
+# past the cap is re-rolled against the remaining states, renormalized.
+_FALSE_POSITIVE_DEMO_CAP = 2
+_FALLBACK_STATES: list[ReviewAction] = [
+    s for s, _ in _SYNTHETIC_STATE_WEIGHTS if s != ReviewAction.FALSE_POSITIVE
+]
+_FALLBACK_WEIGHTS: list[float] = [
+    w for s, w in _SYNTHETIC_STATE_WEIGHTS if s != ReviewAction.FALSE_POSITIVE
+]
+
 
 def _deterministic_rng(seed_text: str) -> random.Random:
     """A Random instance seeded from a stable hash of ``seed_text``.
@@ -188,9 +202,19 @@ def seed_synthetic_review_states(alerts_df) -> None:
     weights = [w for _, w in _SYNTHETIC_STATE_WEIGHTS]
     now = datetime.now()
 
+    false_positive_count = sum(
+        1 for d in existing.values() if d.get("state") == ReviewAction.FALSE_POSITIVE.value
+    )
+
     for alert_id in alert_ids:
         rng = _deterministic_rng(alert_id)
         target_state = rng.choices(states, weights=weights, k=1)[0]
+        if target_state == ReviewAction.FALSE_POSITIVE:
+            if false_positive_count >= _FALSE_POSITIVE_DEMO_CAP:
+                # Cap reached — re-roll against every other state instead.
+                target_state = rng.choices(_FALLBACK_STATES, weights=_FALLBACK_WEIGHTS, k=1)[0]
+            else:
+                false_positive_count += 1
         path = _SYNTHETIC_STATE_PATH[target_state]
 
         cursor = now - timedelta(days=rng.randint(14, 120))

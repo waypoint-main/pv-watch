@@ -1,4 +1,4 @@
-"""Structured data models shared across PV Watch modules.
+"""Structured data models shared across Solance modules.
 
 Using small dataclasses/enums (rather than passing bare dicts or untyped
 DataFrame rows between modules) keeps the pipeline self-documenting: every

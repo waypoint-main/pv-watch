@@ -1,6 +1,6 @@
 """Page 5 — Sustainable PV Reporting.
 
-The client-facing deliverable for the third outcome in PV Watch's value
+The client-facing deliverable for the third outcome in Solance's value
 story: "Solar PV capacity estimation (barangay, province level) ->
 Sustainable PV reporting." Where Executive Overview and Distribution
 Planning are built for exploration, this page is built to be *handed to
@@ -29,13 +29,13 @@ from src.ui_components import (
     section_title,
 )
 
-st.set_page_config(page_title="PV Watch — Sustainable PV Reporting", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Sustainable PV Reporting", page_icon="☀️", layout="wide")
 config = load_config()
 render_app_header(config, "Sustainable PV Reporting")
 
 result = get_pipeline_result()
 if result is None:
-    st.info("Choose a data source on the main **PV Watch** page first (demo data or upload two KMZ files).")
+    st.info("Choose a data source on the main **Solance** page first (demo data or upload two KMZ files).")
     st.stop()
 
 render_disclaimer(

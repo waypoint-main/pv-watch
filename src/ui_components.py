@@ -1,4 +1,4 @@
-"""Reusable Streamlit UI building blocks shared by every PV Watch page.
+"""Reusable Streamlit UI building blocks shared by every Solance page.
 
 Centralizing header rendering, semantic color/icon mapping, KPI cards, map
 construction, and disclaimer banners here keeps the individual page scripts
@@ -200,7 +200,7 @@ def safe_number(value, default: float = 0.0) -> float:
 
 
 def inject_base_style() -> None:
-    """The PV Watch design system: fonts, cards, header, badges, KPI grid,
+    """The Solance design system: fonts, cards, header, badges, KPI grid,
     and light restyling of native Streamlit controls (metrics, buttons,
     tables, sidebar, radio pills)."""
     render_html(
@@ -425,7 +425,7 @@ def inject_base_style() -> None:
 
 
 def render_app_header(config: AppConfig, page_subtitle: Optional[str] = None) -> None:
-    """Render the shared PV Watch gradient header banner, tagline, and demo badge."""
+    """Render the shared Solance gradient header banner, tagline, and demo badge."""
     inject_base_style()
     pill_html = f"<div class='pv-page-pill'>{page_subtitle}</div>" if page_subtitle else ""
     render_html(
@@ -529,7 +529,7 @@ def render_sidebar_brand(config: AppConfig) -> None:
     """A branded block anchored at the bottom of the sidebar, below the page nav.
 
     Two levels of identity, consistent with external materials (e.g. the
-    pitch deck): the "PV Watch" product lockup (icon + name + tagline), and
+    pitch deck): the "Solance" product lockup (icon + name + tagline), and
     beneath it — separated by a hairline, with its own small geo-dot mark —
     an explicit "A product of Waypoint" company credit line, so the sidebar
     reads unambiguously as a company-made product rather than a standalone

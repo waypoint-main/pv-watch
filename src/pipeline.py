@@ -296,7 +296,7 @@ def _run_pipeline_uncached(
     raise ValueError(f"Unknown pipeline mode: {mode}")
 
 
-@st.cache_data(show_spinner="Running the PV Watch analysis pipeline (geometry, grouping, change detection, alerts)...")
+@st.cache_data(show_spinner="Running the Solance analysis pipeline (geometry, grouping, change detection, alerts)...")
 def run_pipeline(
     mode: str,
     kmz_2020_bytes: Optional[bytes],

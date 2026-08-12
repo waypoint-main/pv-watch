@@ -1,7 +1,7 @@
 """Page 6 — Data & Methodology.
 
 Documents inputs, processing, thresholds, assumptions, and limitations so a
-utility reviewer can evaluate exactly how PV Watch produced its results.
+utility reviewer can evaluate exactly how Solance produced its results.
 Grouped into tabs by concern: how data was processed, the rules/thresholds
 that drove classification, and what to keep in mind before acting on it.
 """
@@ -14,7 +14,7 @@ from src.config import load_config
 from src.pipeline import get_pipeline_result
 from src.ui_components import render_app_header, render_disclaimer, render_footer, section_title
 
-st.set_page_config(page_title="PV Watch — Methodology", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Methodology", page_icon="☀️", layout="wide")
 config = load_config()
 render_app_header(config, "Data & Methodology")
 
@@ -32,14 +32,14 @@ with tab_data:
     section_title("Input data & observation dates")
     st.markdown(
         f"""
-PV Watch compares two manually annotated rooftop PV polygon inventories:
+Solance compares two manually annotated rooftop PV polygon inventories:
 
 - **Baseline:** {config.app.observation_year_baseline} (nominal observation date used when a source file has no
   per-feature date: `{config.app.observation_date_baseline}`)
 - **Latest:** {config.app.observation_year_latest} (nominal observation date: `{config.app.observation_date_latest}`)
 
 Because the only two observation points are {config.app.observation_year_baseline} and
-{config.app.observation_year_latest}, PV Watch never claims an installation was *built* in
+{config.app.observation_year_latest}, Solance never claims an installation was *built* in
 {config.app.observation_year_latest}. A newly observed installation is instead described as: *"First observed in the
 {config.app.observation_year_latest} imagery, with a possible installation window between the
 {config.app.observation_year_baseline} and {config.app.observation_year_latest} observation dates."* Likewise, new systems
@@ -75,7 +75,7 @@ GeoPandas' `estimate_utm_crs()`, or using a user-supplied override. Fallback CRS
 """
     )
     if result is not None:
-        st.info(f"For the currently loaded dataset, PV Watch selected **{result.projected_crs_used}** for area/distance calculations.")
+        st.info(f"For the currently loaded dataset, Solance selected **{result.projected_crs_used}** for area/distance calculations.")
 
     section_title("Data provenance")
     st.markdown(
@@ -103,7 +103,7 @@ Always validate grouped installations before operational use.
     cd = config.change_detection
     st.markdown(
         f"""
-For every {config.app.observation_year_latest} installation, PV Watch searches for candidate
+For every {config.app.observation_year_latest} installation, Solance searches for candidate
 {config.app.observation_year_baseline} installations within a buffer of the maximum centroid distance, then computes:
 intersection-over-union (IoU), the percentage of the {config.app.observation_year_baseline} polygon covered by the
 {config.app.observation_year_latest} polygon (and vice versa), centroid displacement, and area change. Exact polygon
@@ -200,7 +200,7 @@ with tab_limits:
     st.markdown(
         "Every newly observed, expanded, uncertain, or potentially-removed case — and every registry or network concern "
         "— is surfaced as an alert requiring human review before any customer outreach, registration action, safety "
-        "review, or grid-planning decision is made. PV Watch supports and accelerates that review; it does not replace it."
+        "review, or grid-planning decision is made. Solance supports and accelerates that review; it does not replace it."
     )
 
 render_footer(config)

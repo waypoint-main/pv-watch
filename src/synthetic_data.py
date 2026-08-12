@@ -1,6 +1,6 @@
 """Synthetic demonstration data generator.
 
-Everything produced by this module is FICTIONAL and exists only so PV Watch
+Everything produced by this module is FICTIONAL and exists only so Solance
 can be explored immediately after cloning, without requiring real utility or
 customer data. Geometries approximate a small Philippine urban area (in the
 general vicinity of Santa Rosa, Laguna) purely for visual realism; they do

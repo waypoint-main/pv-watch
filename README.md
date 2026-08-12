@@ -1,12 +1,12 @@
-# PV Watch — Distributed Solar Change Intelligence
+# Solance — Distributed Solar Change Intelligence
 
-PV Watch is a demonstration Streamlit application showing how temporal geospatial data (two annotated rooftop-solar inventories, 2020 and 2025) can help electricity distribution utilities identify newly observed rooftop PV installations, reconcile them with utility records, and prioritize cases for verification or grid-planning review.
+Solance is a demonstration Streamlit application showing how temporal geospatial data (two annotated rooftop-solar inventories, 2020 and 2025) can help electricity distribution utilities identify newly observed rooftop PV installations, reconcile them with utility records, and prioritize cases for verification or grid-planning review.
 
 > **Disclaimer:** This demonstration identifies geospatial changes that may warrant utility verification. It does not determine legal, permitting, registration, ownership, export, safety, or interconnection status. All registry, feeder, and transformer data shown are **synthetic demonstration data** — not real utility records.
 
 ## Business problem
 
-Distribution utilities in the Philippines (Meralco, AboitizPower, and others) increasingly need visibility into distributed rooftop solar that may not yet be reflected in their internal registration and net-metering records. PV Watch demonstrates a workflow for maintaining an independent geospatial inventory of rooftop PV, comparing it against utility records, and routing discrepancies to the right team — without ever asserting that an unregistered-looking system is "illegal."
+Distribution utilities in the Philippines (Meralco, AboitizPower, and others) increasingly need visibility into distributed rooftop solar that may not yet be reflected in their internal registration and net-metering records. Solance demonstrates a workflow for maintaining an independent geospatial inventory of rooftop PV, comparing it against utility records, and routing discrepancies to the right team — without ever asserting that an unregistered-looking system is "illegal."
 
 Two observation years only support a *possible installation window*, not a construction date: a newly observed system is described as *"first observed in the 2025 imagery, with a possible installation window between the 2020 and 2025 observation dates,"* and is flagged for registration/interconnection **verification**, never labeled as illegal or definitively unregistered.
 
@@ -59,9 +59,9 @@ streamlit run app.py
 
 ### Data sources
 
-PV Watch offers three data sources, selectable at the top of the landing page:
+Solance offers three data sources, selectable at the top of the landing page:
 
-1. **Local KMZ folder (real data)** — the default whenever `output-kmz/2020/` and `output-kmz/2025/` (relative to the project root) exist and contain `.kmz` files. PV Watch automatically loads and merges **every** `.kmz` file in each folder into one baseline/latest inventory — no upload step needed. Each array polygon's barangay is taken directly from its filename (e.g. `2020_Brgy_Sinalhan.kmz` → barangay "Sinalhan"), which is more accurate than the synthetic spatial-zone join used for the other two modes. This repository ships with 18 real per-barangay KMZ pairs (Santa Rosa, Laguna) in `output-kmz/`, covering 109 digitized array polygons in 2020 and 1,287 in 2025 — to point PV Watch at a different folder, edit `data_sources` in `config/settings.yaml`.
+1. **Local KMZ folder (real data)** — the default whenever `output-kmz/2020/` and `output-kmz/2025/` (relative to the project root) exist and contain `.kmz` files. Solance automatically loads and merges **every** `.kmz` file in each folder into one baseline/latest inventory — no upload step needed. Each array polygon's barangay is taken directly from its filename (e.g. `2020_Brgy_Sinalhan.kmz` → barangay "Sinalhan"), which is more accurate than the synthetic spatial-zone join used for the other two modes. This repository ships with 18 real per-barangay KMZ pairs (Santa Rosa, Laguna) in `output-kmz/`, covering 109 digitized array polygons in 2020 and 1,287 in 2025 — to point Solance at a different folder, edit `data_sources` in `config/settings.yaml`.
    - Note: the ~12x increase in digitized array count between 2020 and 2025 in this sample dataset reflects a mix of real rooftop-PV growth **and** a more exhaustive 2025 digitization pass — treat the "newly observed" totals as a starting point for verification, not a precise growth measurement, exactly as the app's disclaimers describe.
 2. **Synthetic demo data** — works immediately with no files at all; procedurally generated, fictional geometries (see below).
 3. **Upload my own KMZ files** — manually upload a single 2020 KMZ and a single 2025 KMZ.
@@ -70,7 +70,7 @@ Two small sample KMZ files (one barangay, real digitized footprints, used here p
 
 ## Expected KMZ structure
 
-- A KMZ is a zipped KML. PV Watch extracts the first `.kml` it finds (warns if more than one is present).
+- A KMZ is a zipped KML. Solance extracts the first `.kml` it finds (warns if more than one is present).
 - Only `Placemark` features with `Polygon` (or `MultiGeometry` of polygons) geometry are treated as PV array footprints; other geometry types (points, lines) are skipped with a warning.
 - KML coordinates are assumed WGS84 lon/lat (per the KML spec) — no CRS tag needed in the file.
 - Optional `ExtendedData`/`SimpleData` fields such as `parcel_id` / `ParcelID` / `building_id` are picked up automatically and used to strengthen installation grouping.
@@ -82,7 +82,7 @@ Demo mode procedurally generates a synthetic rooftop-PV scenario (34 baseline / 
 
 ## Change-detection methodology (summary)
 
-For each 2025 installation, PV Watch searches for candidate 2020 installations within a centroid-distance buffer and computes intersection-over-union (IoU), coverage percentage in each direction, centroid displacement, and area change — never requiring exact polygon equality. Explicit, configurable thresholds (see below) classify each case as **Existing**, **Expanded**, **Newly observed**, **Potentially removed**, or **Uncertain**, each with a human-readable `classification_reason`. Full detail — including installation grouping, capacity estimation, registry matching, and alert-priority scoring — is documented on the in-app **Methodology** page.
+For each 2025 installation, Solance searches for candidate 2020 installations within a centroid-distance buffer and computes intersection-over-union (IoU), coverage percentage in each direction, centroid displacement, and area change — never requiring exact polygon equality. Explicit, configurable thresholds (see below) classify each case as **Existing**, **Expanded**, **Newly observed**, **Potentially removed**, or **Uncertain**, each with a human-readable `classification_reason`. Full detail — including installation grouping, capacity estimation, registry matching, and alert-priority scoring — is documented on the in-app **Methodology** page.
 
 ## Configuration
 

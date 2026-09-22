@@ -20,7 +20,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from src.config import load_config
+from src.region import active_config
 from src.pipeline import get_pipeline_result
 from src.ui_components import (
     _icon_svg,
@@ -34,7 +34,7 @@ from src.ui_components import (
 
 st.set_page_config(page_title="Solance", page_icon="☀️", layout="wide")
 
-config = load_config()
+config = active_config()
 render_app_header(config)
 
 render_disclaimer(

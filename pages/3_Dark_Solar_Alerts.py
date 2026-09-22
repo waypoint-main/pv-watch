@@ -31,7 +31,7 @@ import folium
 import streamlit as st
 from streamlit_folium import st_folium
 
-from src.config import load_config
+from src.region import active_config
 from src.export_utils import build_export_metadata, dataframe_to_csv_bytes
 from src.models import REVIEW_END_STATE_VALUES, REVIEW_STATE_TRANSITIONS, ReviewAction
 from src.pipeline import get_pipeline_result
@@ -55,7 +55,7 @@ from src.ui_components import (
 )
 
 st.set_page_config(page_title="Solance — Dark Solar Alerts", page_icon="☀️", layout="wide")
-config = load_config()
+config = active_config()
 render_app_header(config, "Dark Solar Alerts")
 
 result = get_pipeline_result()

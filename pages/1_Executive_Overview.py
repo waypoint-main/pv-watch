@@ -11,7 +11,7 @@ import plotly.express as px
 import streamlit as st
 from streamlit_folium import st_folium
 
-from src.config import load_config
+from src.region import active_config
 from src.models import REVIEW_END_STATE_VALUES, ChangeType, Priority
 from src.pipeline import get_pipeline_result
 from src.review_store import apply_decisions_to_alerts
@@ -31,7 +31,7 @@ from src.ui_components import (
 )
 
 st.set_page_config(page_title="Solance — Executive Overview", page_icon="☀️", layout="wide")
-config = load_config()
+config = active_config()
 render_app_header(config, "Executive Overview")
 
 result = get_pipeline_result()

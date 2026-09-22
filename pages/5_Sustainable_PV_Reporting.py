@@ -15,7 +15,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from src.config import load_config
+from src.region import active_config
 from src.export_utils import build_export_metadata, dataframe_to_csv_bytes
 from src.models import ChangeType, ReviewAction
 from src.pipeline import get_pipeline_result
@@ -30,7 +30,7 @@ from src.ui_components import (
 )
 
 st.set_page_config(page_title="Solance — Sustainable PV Reporting", page_icon="☀️", layout="wide")
-config = load_config()
+config = active_config()
 render_app_header(config, "Sustainable PV Reporting")
 
 result = get_pipeline_result()
@@ -65,8 +65,8 @@ render_factsheet_sections(
     ]
 )
 st.caption(
-    "This demonstration covers a single municipality within Laguna province. A full deployment would roll up "
-    "every municipality a distribution utility serves into the same province-level view."
+    f"This demonstration covers a single municipality within {province_label}. A full deployment would roll up "
+    "every municipality a distribution utility serves into the same regional view."
 )
 
 capacity_2025 = float(installs_2025["estimated_capacity_kw"].sum()) if not installs_2025.empty else 0.0

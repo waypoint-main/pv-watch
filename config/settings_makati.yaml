@@ -1,0 +1,88 @@
+# Solance configuration — Makati City region
+# -----------------------------------------------------------------------------
+# Mirrors config/settings.yaml (Santa Rosa, Laguna) but points at the
+# Makati City KMZ inventory and adjusts the region-specific labels/synthetic
+# geometry center. See settings.yaml for full comments on each section — the
+# analytical thresholds below (change detection, capacity, alerts, registry
+# matching) are intentionally identical across regions so the two datasets
+# are analyzed the same way, per the same demonstration assumptions.
+# -----------------------------------------------------------------------------
+
+app:
+  name: "Solance"
+  tagline: "Distributed Solar Change Intelligence"
+  version: "0.1.0-mvp"
+  observation_year_baseline: 2020
+  observation_year_latest: 2025
+  observation_date_baseline: "2020-06-30"
+  observation_date_latest: "2025-06-30"
+
+data_sources:
+  # Makati's output is one citywide KMZ per year (not split per-barangay
+  # like Santa Rosa), so every array in this folder is labeled with the
+  # same area name below rather than a per-file barangay name.
+  local_kmz_2020_dir: "output-kmz-makati/2020"
+  local_kmz_2025_dir: "output-kmz-makati/2025"
+  default_municipality: "Makati City"
+  # Static regional label for the PV Reporting page's province-level rollup.
+  # Makati is a highly urbanized city within Metro Manila (NCR), not a
+  # province — the label is still shown under "Province" for layout
+  # consistency with the Laguna region, but reads correctly either way.
+  province: "Metro Manila"
+
+crs:
+  geographic_crs: "EPSG:4326"
+  default_projected_crs: null
+  fallback_projected_crs: "EPSG:32651"
+
+installation_grouping:
+  grouping_distance_m: 5.0
+  use_parcel_id_when_available: true
+  parcel_id_field: "parcel_id"
+
+change_detection:
+  minimum_iou_match: 0.30
+  minimum_overlap_ratio: 0.50
+  maximum_centroid_distance_m: 10.0
+  stable_area_change_ratio: 0.20
+  expansion_area_change_ratio: 0.30
+  grouping_distance_m: 5.0
+  uncertainty_margin: 0.08
+  ambiguous_secondary_match_margin: 0.10
+
+capacity_estimation:
+  kw_per_m2: 0.17
+  large_system_capacity_kw: 15.0
+
+alert_engine:
+  weights:
+    newly_observed: 3
+    expanded: 2
+    uncertain: 1
+    no_registry_match: 2
+    capacity_exceeds_registered: 3
+    large_installation: 2
+    transformer_cluster: 2
+    low_detection_confidence: 1
+    network_review_recommended: 2
+  large_installation_area_m2: 90.0
+  cluster_new_installation_count: 3
+  priority_1_min_score: 7
+  priority_2_min_score: 5
+  priority_3_min_score: 3
+
+registry_matching:
+  spatial_match_distance_m: 15.0
+  probable_match_distance_m: 40.0
+
+synthetic_demo:
+  seed: 42
+  baseline_installation_count: 34
+  latest_installation_count: 52
+  town_name: "Makati City"
+  # Centroid of the real Makati 2020/2025 KMZ inventory, so the synthetic
+  # registry/feeder/transformer overlay (used the same way it is for
+  # Laguna — see synthetic_data.py) is placed in the right vicinity of the
+  # real data rather than defaulting to the Santa Rosa center.
+  center_lat: 14.5504
+  center_lon: 121.0286

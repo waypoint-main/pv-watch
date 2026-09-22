@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.config import load_config
+from src.region import active_config
 from src.pipeline import get_pipeline_result
 from src.ui_components import render_app_header, render_disclaimer, render_footer, section_title
 
 st.set_page_config(page_title="Solance — Methodology", page_icon="☀️", layout="wide")
-config = load_config()
+config = active_config()
 render_app_header(config, "Data & Methodology")
 
 render_disclaimer(

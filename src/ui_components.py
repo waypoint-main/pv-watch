@@ -42,12 +42,22 @@ NEUTRAL_BLUE_LIGHT = "#A9C2D0"  # pale — lowest priority / historical-only, st
 NEUTRAL_TAUPE = "#A69684"       # warm — a second, distinguishable "unclear" tone for maps
 # that already use NEUTRAL_BLUE for something else in the same legend
 
+# NOTE on CHANGE_TYPE_COLORS: Potentially-removed and Uncertain were
+# originally red-brown (#A13D3D) and gold-brown (#B8934A) — both close
+# enough to Newly-observed's red and Expanded's gold (measured deltaE ~26-30
+# in CIE Lab, well under the ~35+ needed to read as clearly distinct colors
+# at a glance) that the four "needs a look" categories blurred together on
+# the map. Potentially-removed now uses a muted plum, outside the
+# red/gold/blue/green families entirely, and Uncertain reuses NEUTRAL_TAUPE
+# (already reserved above for exactly this "second unclear tone" role) —
+# every category is now >35 deltaE from every other, comfortably
+# distinguishable rather than borderline.
 CHANGE_TYPE_COLORS = {
     ChangeType.EXISTING.value: NEUTRAL_BLUE,          # muted but visibly blue — baseline, not actionable
     ChangeType.NEWLY_OBSERVED.value: "#C4291C",       # urgent red — the headline actionable signal
     ChangeType.EXPANDED.value: "#F2A93B",             # accent gold — worth a second look
-    ChangeType.POTENTIALLY_REMOVED.value: "#A13D3D",  # muted red-brown — verify, lower urgency than new
-    ChangeType.UNCERTAIN.value: "#B8934A",            # dusty gold-brown — low confidence, needs more data
+    ChangeType.POTENTIALLY_REMOVED.value: "#8B5A83",  # muted plum — distinct from red, verify but lower urgency
+    ChangeType.UNCERTAIN.value: NEUTRAL_TAUPE,        # warm taupe — low confidence, distinct from gold
 }
 CHANGE_TYPE_ICONS = {
     ChangeType.EXISTING.value: "●",
@@ -570,13 +580,57 @@ def render_sidebar_brand(config: AppConfig) -> None:
 # Map helpers
 # -----------------------------------------------------------------------------
 
+
+# Esri's free "Light Gray Canvas" basemap — a base (unlabeled greyscale
+# terrain) layer plus a reference (labels/roads) overlay layer, stacked
+# together the way Esri's own examples do it. Used in place of CartoDB
+# Positron: CARTO deprecated its legacy no-key raster tile endpoint
+# (basemaps.cartocdn.com) in favor of an API-key-gated service, which
+# started surfacing an "API KEY REQUIRED" watermark instead of a map, with
+# no way to keep using it for free. Esri's ArcGIS Online tiles require no
+# key/signup and are visually similar (light grey canvas) so the app's
+# semantic polygon/marker colors still read clearly against it.
+_BASEMAP_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+_BASEMAP_LABELS_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+_BASEMAP_ATTR = "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
+
+
 def make_base_map(center_lat: float, center_lon: float, zoom: int = 15, locate: bool = False) -> folium.Map:
     """A clean, light basemap suitable for a utility demonstration.
 
     Adds a fullscreen control to every map by default so reviewers can
     expand a map to inspect detail without leaving the page.
     """
-    fmap = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, tiles="CartoDB positron", control_scale=True)
+    # Start with no default tile layer (``tiles=None``) and add both tile
+    # layers explicitly below, each with a short, human-readable ``name=``.
+    # Passing a raw URL straight to ``tiles=`` on ``folium.Map()`` leaves
+    # folium to default that layer's internal name to the URL itself —
+    # which is what was surfacing as a very long, truncated tile-URL label
+    # wherever folium/Leaflet shows a layer's name (e.g. hovering the
+    # layers icon). Naming both layers ourselves avoids that entirely.
+    fmap = folium.Map(
+        location=[center_lat, center_lon],
+        zoom_start=zoom,
+        tiles=None,
+        control_scale=True,
+    )
+    folium.TileLayer(
+        tiles=_BASEMAP_TILES,
+        attr=_BASEMAP_ATTR,
+        name="Light Gray Base",
+        overlay=False,
+        control=False,
+    ).add_to(fmap)
+    # Labels/roads overlay on top of the plain grey canvas — not exposed as
+    # a toggle (there's no folium.LayerControl in this app) since it should
+    # always be visible, the same way CartoDB Positron bundled labels in.
+    folium.TileLayer(
+        tiles=_BASEMAP_LABELS_TILES,
+        attr=_BASEMAP_ATTR,
+        name="Labels",
+        overlay=True,
+        control=False,
+    ).add_to(fmap)
     Fullscreen(position="topright", title="Expand map", title_cancel="Exit fullscreen").add_to(fmap)
     if locate:
         LocateControl(position="topright").add_to(fmap)

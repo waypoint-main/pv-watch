@@ -25,7 +25,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from src import network_context
-from src.config import load_config
+from src.region import active_config
 from src.export_utils import build_export_metadata, dataframe_to_csv_bytes
 from src.models import ChangeType, HostingCapacityStatus
 from src.network_context import MONITOR_RATIO, REVIEW_RECOMMENDED_ALERT_COUNT, REVIEW_RECOMMENDED_RATIO
@@ -61,7 +61,7 @@ def _transformer_marker_size(rated_kva: float) -> int:
     return _TRANSFORMER_MARKER_TIERS[-1][1]
 
 st.set_page_config(page_title="Solance — Distribution Planning", page_icon="☀️", layout="wide")
-config = load_config()
+config = active_config()
 render_app_header(config, "Distribution Planning")
 
 result = get_pipeline_result()

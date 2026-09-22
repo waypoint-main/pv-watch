@@ -13,7 +13,7 @@ import folium
 import streamlit as st
 from streamlit_folium import st_folium
 
-from src.config import load_config
+from src.region import active_config
 from src.export_utils import build_export_metadata, geodataframe_to_geojson_bytes
 from src.models import ChangeType, DetectionConfidence, Priority, RegistryMatchStatus
 from src.pipeline import build_explorer_table, get_pipeline_result
@@ -38,7 +38,7 @@ from src.ui_components import (
 )
 
 st.set_page_config(page_title="Solance — PV Change Explorer", page_icon="☀️", layout="wide")
-config = load_config()
+config = active_config()
 render_app_header(config, "PV Change Explorer")
 
 result = get_pipeline_result()

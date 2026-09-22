@@ -33,6 +33,7 @@ from src.data_loader import (
 )
 from src.geometry_utils import GeometryQualityReport, estimate_utm_crs
 from src.models import ChangeType
+from src.region import active_config_path
 
 
 @dataclass
@@ -369,7 +370,10 @@ def get_pipeline_result() -> Optional[PipelineResult]:
     """Fetch the pipeline result for the mode/files currently in session state.
 
     Every page calls this at the top so navigating directly to any page (not
-    just the landing page) still produces a consistent, cached result.
+    just the landing page) still produces a consistent, cached result. The
+    config path is resolved from the active region (see ``src.region``) so
+    each region's local KMZ folder, municipality label, and thresholds are
+    used, and so the two regions get separate cache entries.
     """
     mode = st.session_state.get("pv_watch_mode", "demo")
     kmz_2020 = st.session_state.get("pv_watch_kmz_2020_bytes")
@@ -377,12 +381,13 @@ def get_pipeline_result() -> Optional[PipelineResult]:
     name_2020 = st.session_state.get("pv_watch_kmz_2020_name", "")
     name_2025 = st.session_state.get("pv_watch_kmz_2025_name", "")
     crs_override = st.session_state.get("pv_watch_crs_override")
+    config_path = active_config_path()
 
     if mode == "upload" and (not kmz_2020 or not kmz_2025):
         return None
 
     try:
-        return run_pipeline(mode, kmz_2020, kmz_2025, name_2020, name_2025, crs_override)
+        return run_pipeline(mode, kmz_2020, kmz_2025, name_2020, name_2025, crs_override, config_path)
     except KmzLoadError as exc:
         st.error(f"Could not process the uploaded KMZ file(s): {exc}")
         return None

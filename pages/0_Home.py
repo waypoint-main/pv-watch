@@ -23,42 +23,34 @@ import streamlit as st
 from src.region import active_config
 from src.pipeline import get_pipeline_result
 from src.ui_components import (
+    INK_MUTED,
     _icon_svg,
     kpi_row,
     render_app_header,
-    render_disclaimer,
     render_footer,
     render_html,
     section_title,
 )
 
-st.set_page_config(page_title="Solance", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance", layout="wide")
 
 config = active_config()
 render_app_header(config)
 
-render_disclaimer(
-    "This demonstration identifies geospatial changes that may warrant utility verification. "
-    "It does not determine legal, permitting, registration, ownership, export, safety, or "
-    "interconnection status."
-)
-
 # --- What Solance delivers (3-pillar value story) -----------------------------
-# Mirrors the utility's own inputs -> Solance -> outcomes workflow: this is
-# the first thing a reviewer sees, before picking a data source.
-section_title("What Solance delivers", "Three inputs — registration records, satellite imagery, feeder/transformer data — feed one workflow with three outcomes.")
+# One short line per pillar, named to match the sidebar pages — a client
+# should recognize where to click next, not read a paragraph to get there.
+section_title("What Solance Delivers")
 pillar1, pillar2, pillar3 = st.columns(3)
 
 with pillar1:
     render_html(
         f"""
-        <div class="pv-card" style="min-height:190px;">
+        <div class="pv-card" style="min-height:130px;">
             <div class="pv-kpi-icon" style="margin-bottom:0.5rem;">{_icon_svg("bell", size=18)}</div>
-            <b>Dark solar alerting & registration tracking</b>
-            <p style="color:#5B6B76;font-size:0.85rem;margin-top:0.4rem;">
-                Surface PV systems visible in imagery but not yet confirmed registered ("dark solar"), and track
-                each one from field validation through application to registration — closing the loop back into
-                your registration inventory.
+            <b>Dark Solar Alerts</b>
+            <p style="color:{INK_MUTED};font-size:0.85rem;margin-top:0.4rem;">
+                Every unregistered system, tracked to resolution.
             </p>
         </div>
         """
@@ -67,13 +59,11 @@ with pillar1:
 with pillar2:
     render_html(
         f"""
-        <div class="pv-card" style="min-height:190px;">
+        <div class="pv-card" style="min-height:130px;">
             <div class="pv-kpi-icon" style="margin-bottom:0.5rem;">{_icon_svg("building", size=18)}</div>
-            <b>Distribution planning intelligence</b>
-            <p style="color:#5B6B76;font-size:0.85rem;margin-top:0.4rem;">
-                See new and existing PV by transformer_id / feeder_id / installation_id to support distribution
-                planning decisions. (Load <i>forecasting</i> needs a time series Solance doesn't have yet with
-                only two observation years — see Distribution Planning for details.)
+            <b>Distribution Planning</b>
+            <p style="color:{INK_MUTED};font-size:0.85rem;margin-top:0.4rem;">
+                PV load by transformer and feeder, ranked by exposure.
             </p>
         </div>
         """
@@ -82,12 +72,11 @@ with pillar2:
 with pillar3:
     render_html(
         f"""
-        <div class="pv-card" style="min-height:190px;">
+        <div class="pv-card" style="min-height:130px;">
             <div class="pv-kpi-icon" style="margin-bottom:0.5rem;">{_icon_svg("layers", size=18)}</div>
-            <b>Sustainable PV reporting</b>
-            <p style="color:#5B6B76;font-size:0.85rem;margin-top:0.4rem;">
-                Barangay- and province-level solar PV capacity estimates, rolled up into a summary ready to
-                share with management or a regulator.
+            <b>Sustainable Reporting</b>
+            <p style="color:{INK_MUTED};font-size:0.85rem;margin-top:0.4rem;">
+                Verified capacity, rolled up and export-ready.
             </p>
         </div>
         """
@@ -105,7 +94,7 @@ local_folder_available = (
 if "pv_watch_mode" not in st.session_state:
     st.session_state["pv_watch_mode"] = "local_folder" if local_folder_available else "demo"
 
-section_title("Data source")
+section_title("Data Source")
 
 mode_options = (["Local KMZ folder (real data)"] if local_folder_available else []) + [
     "Synthetic demo data",
@@ -129,11 +118,7 @@ mode = st.session_state["pv_watch_mode"]
 if mode == "local_folder":
     n_2020 = len(list(DIR_2020.glob("*.kmz")))
     n_2025 = len(list(DIR_2025.glob("*.kmz")))
-    st.caption(
-        f"Automatically loading and merging **{n_2020}** {config.app.observation_year_baseline} KMZ file(s) from "
-        f"`{config.data_sources.local_kmz_2020_dir}` and **{n_2025}** {config.app.observation_year_latest} KMZ file(s) "
-        f"from `{config.data_sources.local_kmz_2025_dir}` — each file's barangay name comes from its filename."
-    )
+    st.caption(f"**{n_2020 + n_2025}** verified imagery files loaded — {config.app.observation_year_baseline} vs. {config.app.observation_year_latest}.")
     st.session_state.pop("pv_watch_kmz_2020_bytes", None)
     st.session_state.pop("pv_watch_kmz_2025_bytes", None)
     st.session_state["pv_watch_crs_override"] = None
@@ -142,10 +127,7 @@ elif mode == "demo":
     st.session_state.pop("pv_watch_kmz_2020_bytes", None)
     st.session_state.pop("pv_watch_kmz_2025_bytes", None)
     st.session_state["pv_watch_crs_override"] = None
-    st.caption(
-        f"Using synthetic demonstration data resembling a small Philippine urban area "
-        f"({config.synthetic_demo.town_name}). These geometries are fictional and do not represent real PV installations."
-    )
+    st.caption("Synthetic demo dataset — not real installations.")
 
 else:  # upload
     col1, col2 = st.columns(2)
@@ -160,17 +142,13 @@ else:  # upload
             st.session_state["pv_watch_kmz_2025_bytes"] = f2025.getvalue()
             st.session_state["pv_watch_kmz_2025_name"] = f2025.name
 
-    with st.expander("Advanced: projected CRS for area calculation"):
-        st.caption(
-            "Solance auto-selects an appropriate UTM zone from your data's centroid for area/distance "
-            "calculations. Override it here only if you need a specific projected CRS (e.g. a local grid)."
-        )
+    with st.expander("Advanced: projected CRS"):
         crs_input = st.text_input("Projected CRS (e.g. EPSG:32651)", value="", key="crs_override_input")
         st.session_state["pv_watch_crs_override"] = crs_input.strip() or None
 
     ready = bool(st.session_state.get("pv_watch_kmz_2020_bytes")) and bool(st.session_state.get("pv_watch_kmz_2025_bytes"))
     if not ready:
-        st.info("Upload both a 2020 and a 2025 KMZ file to run the comparison, or switch to another data source above.")
+        st.info("Upload both a 2020 and a 2025 KMZ file to continue.")
 
 result = get_pipeline_result()
 
@@ -187,21 +165,17 @@ if result is not None:
                     st.markdown(f"- {w}")
 
     st.divider()
-    section_title("Snapshot", f"Projected CRS used for area/distance calculations: `{result.projected_crs_used}`")
+    section_title("Snapshot")
     n_new = int((result.change_df["change_type"] == "Newly observed").sum())
     n_alerts = len(result.alerts_df)
+    capacity_kw = float(result.installations_2025["estimated_capacity_kw"].sum()) if not result.installations_2025.empty else 0.0
     kpi_row(
         [
             (f"{config.app.observation_year_latest} installations", f"{len(result.installations_2025):,}", "Total installations in the latest inventory."),
             ("Newly observed", f"{n_new:,}", "First observed in the latest imagery — the headline change signal."),
+            ("Estimated capacity", f"{capacity_kw:,.0f} kW", "Total estimated PV capacity in the latest inventory."),
             ("Alerts generated", f"{n_alerts:,}", "Cases requiring reviewer verification — see Dark Solar Alerts."),
         ]
-    )
-
-    st.success(
-        "Analysis complete. Use the sidebar to open **Overview**, **PV Change Explorer**, "
-        "**Dark Solar Alerts**, **Distribution Planning**, **Sustainable Reporting**, or **Methodology** — "
-        "or use the cards above."
     )
 
     if st.button("Re-run pipeline (clear cache)"):

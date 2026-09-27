@@ -37,7 +37,7 @@ from src.ui_components import (
     size_class,
 )
 
-st.set_page_config(page_title="Solance — PV Change Explorer", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — PV Change Explorer", layout="wide")
 config = active_config()
 render_app_header(config, "PV Change Explorer")
 
@@ -228,10 +228,10 @@ with tab_map:
         render_map_legend([(p, color) for p, color in PRIORITY_COLORS.items()])
 
     st_folium(m, use_container_width=True, height=560, key="explorer_map", returned_objects=[])
-    st.caption("Click a shaded installation to see its full case details (IDs, areas, capacity, registry, network, and classification reason).")
+    st.caption("Click any installation for full case detail.")
 
 with tab_compare:
-    section_title("2020 vs 2025 side-by-side view", "Same municipality/barangay filters and extent, shown for both observation years.")
+    section_title("2020 vs 2025 Side by Side")
     side1, side2 = st.columns(2)
     with side1:
         st.caption(f"{config.app.observation_year_baseline} baseline")
@@ -263,7 +263,7 @@ with tab_compare:
         st_folium(m2, use_container_width=True, height=380, key="side_2025", returned_objects=[])
 
 with tab_table:
-    section_title(f"Filtered cases ({len(filtered):,})")
+    section_title(f"Filtered Cases ({len(filtered):,})")
     display_cols = [c for c in [
         "display_installation_id", "change_type", "municipality", "barangay", "area_2020_m2", "area_2025_m2",
         "area_change_percent", "estimated_capacity_kw", "detection_confidence", "registry_match_status",
@@ -272,7 +272,7 @@ with tab_table:
     st.dataframe(filtered[display_cols], use_container_width=True, hide_index=True, height=460)
 
 with tab_export:
-    section_title("Exports", "EPSG:4326, with source years / thresholds / synthetic-data flag / app version embedded.")
+    section_title("Exports")
     metadata = build_export_metadata(config, result.is_synthetic)
     exp1, exp2 = st.columns(2)
     with exp1:

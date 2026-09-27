@@ -28,7 +28,6 @@ from src import network_context
 from src.region import active_config
 from src.export_utils import build_export_metadata, dataframe_to_csv_bytes
 from src.models import ChangeType, HostingCapacityStatus
-from src.network_context import MONITOR_RATIO, REVIEW_RECOMMENDED_ALERT_COUNT, REVIEW_RECOMMENDED_RATIO
 from src.pipeline import get_pipeline_result
 from src.review_store import apply_decisions_to_alerts
 from src.ui_components import (
@@ -39,11 +38,9 @@ from src.ui_components import (
     factsheet_popup_html,
     make_base_map,
     render_app_header,
-    render_disclaimer,
     render_footer,
     render_html,
     render_map_legend,
-    render_synthetic_data_notice,
     section_title,
     transformer_marker_icon,
 )
@@ -60,7 +57,7 @@ def _transformer_marker_size(rated_kva: float) -> int:
             return size
     return _TRANSFORMER_MARKER_TIERS[-1][1]
 
-st.set_page_config(page_title="Solance — Distribution Planning", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Distribution Planning", layout="wide")
 config = active_config()
 render_app_header(config, "Distribution Planning")
 
@@ -69,18 +66,7 @@ if result is None:
     st.info("Choose a data source on the main **Solance** page first (demo data or upload two KMZ files).")
     st.stop()
 
-render_synthetic_data_notice("feeder, transformer, and registered-capacity")
-render_disclaimer(
-    "The hosting-capacity indicators below are simple illustrative ratios of observed + estimated PV capacity "
-    "to transformer rated capacity. They do NOT replace a formal distribution-impact study or power-flow analysis."
-)
-st.caption(
-    "This page supports **distribution planning** (where new PV is concentrating, by transformer_id / feeder_id / "
-    "installation_id). It does not do **load forecasting** — Solance currently compares two snapshots "
-    f"({config.app.observation_year_baseline} and {config.app.observation_year_latest}), which isn't enough "
-    "history to project future load. A production deployment ingesting imagery on a regular cadence could add "
-    "true trend-based forecasting; this demo doesn't overstate what two data points can support."
-)
+st.caption("PV load by transformer and feeder — where new solar is concentrating on your network.")
 
 live_alerts = apply_decisions_to_alerts(result.alerts_df)
 transformer_summary = network_context.compute_transformer_summary(result.installations_2025, result.transformers, alerts=live_alerts)
@@ -102,14 +88,7 @@ with tab_tx:
     if review_count:
         st.warning(f"**{review_count} transformer(s)** are flagged **Review recommended** — prioritize these for field/registry verification.")
 
-    section_title(
-        "Transformer network map",
-        f"Each badge is a transformer. Larger badges are bigger transformers (rated capacity, in a few size "
-        f"steps, not continuous). Color shows how much of that capacity rooftop PV already uses, as a share of "
-        f"rated capacity: green is under {MONITOR_RATIO:.0%}, gold is {MONITOR_RATIO:.0%}–{REVIEW_RECOMMENDED_RATIO:.0%}, "
-        f"and red is {REVIEW_RECOMMENDED_RATIO:.0%} or more (or {REVIEW_RECOMMENDED_ALERT_COUNT}+ unresolved alerts "
-        "on that transformer) — click a badge to see its exact PV load percentage.",
-    )
+    section_title("Transformer Network Map")
     render_map_legend([(label, color) for label, color in HOSTING_STATUS_COLORS.items()])
     tx_geo = result.transformers[["transformer_id", "geometry"]].merge(transformer_summary, on="transformer_id", how="left")
     tx_geo = gpd.GeoDataFrame(tx_geo, geometry="geometry", crs=result.transformers.crs)
@@ -147,11 +126,7 @@ with tab_tx:
     folium.LayerControl(collapsed=False).add_to(m)
     st_folium(m, use_container_width=True, height=520, key="grid_planning_map", returned_objects=[])
 
-    section_title(
-        "By transformer",
-        "Same story as the map, in table form — sorted so transformers most worth a look come first. "
-        "\"PV load vs. rated capacity\" is the number the status/color is based on.",
-    )
+    section_title("By Transformer")
     tx_display_cols = [
         "transformer_id", "feeder_id", "rated_capacity_kva", "recorded_pv_capacity_kw", "installation_count",
         "new_installation_count", "estimated_new_pv_capacity_kw", "existing_estimated_capacity_kw",
@@ -197,12 +172,7 @@ with tab_tx:
         )
 
 with tab_feeder:
-    section_title(
-        "By feeder",
-        "Feeder boundaries are colored by their single worst transformer's status (same color scale as the "
-        "Transformers map). The table below also shows each feeder's overall PV load: total PV capacity across "
-        "all its transformers, as a share of their combined rated capacity.",
-    )
+    section_title("By Feeder")
     if not transformer_summary.empty and "feeder_id" in transformer_summary.columns:
         feeder_summary = (
             transformer_summary.groupby("feeder_id")
@@ -272,7 +242,7 @@ with tab_feeder:
         st.info("No feeder-level data available for the current dataset.")
 
 with tab_zone:
-    section_title("By municipality and barangay")
+    section_title("By Municipality and Barangay")
     # `installations_2025` already carries each installation's own change_type
     # (merged in by the pipeline) — no extra join needed here.
     installs = result.installations_2025.copy()
@@ -292,9 +262,5 @@ with tab_zone:
         .reset_index()
     )
     st.dataframe(zone_summary, use_container_width=True, hide_index=True)
-    st.caption(
-        "An optional grid-cell aggregation (independent of administrative boundaries) is planned for a future phase — "
-        "see the Methodology page's roadmap."
-    )
 
 render_footer(config)

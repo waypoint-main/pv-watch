@@ -23,14 +23,13 @@ from src.ui_components import (
     kpi_row,
     make_base_map,
     render_app_header,
-    render_disclaimer,
     render_footer,
     render_map_legend,
     section_title,
     size_class,
 )
 
-st.set_page_config(page_title="Solance — Executive Overview", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Executive Overview", layout="wide")
 config = active_config()
 render_app_header(config, "Executive Overview")
 
@@ -66,7 +65,7 @@ if not installations_2025.empty and "barangay" in installations_2025.columns:
         if len(counts):
             top_zone = f"{counts.index[0]} ({int(counts.iloc[0])} new)"
 
-section_title("Where is distributed solar growing beyond what the utility may currently see in its records?")
+section_title("Distributed Solar Growth")
 
 tab_overview, tab_map, tab_trends = st.tabs(["Overview", "Map", "Trends"])
 
@@ -82,15 +81,7 @@ with tab_overview:
             ("Unresolved P1/P2 alerts", f"{unresolved_high_priority:,}", "Priority 1 or 2 alerts whose case is still open (not Registered or False positive)."),
         ]
     )
-    st.caption(f"Zone with the most newly observed installations: **{top_zone}**")
-
-    render_disclaimer(
-        "Newly observed installations were first observed in the "
-        f"{config.app.observation_year_latest} imagery, with a possible installation window between the "
-        f"{config.app.observation_year_baseline} and {config.app.observation_year_latest} observation dates. "
-        "This does not imply the system was installed in 2025, nor does it determine registration status — "
-        "verify registration and grid-interconnection status before taking action."
-    )
+    st.caption(f"Top growth zone: **{top_zone}**")
 
     if unresolved_high_priority > 0:
         st.warning(
@@ -99,7 +90,7 @@ with tab_overview:
         )
 
 with tab_map:
-    section_title("Change-classification map", "Every installation, colored by how it changed between the two observation years.")
+    section_title("Change-Classification Map")
     change_types_in_order = [
         ChangeType.EXISTING.value, ChangeType.POTENTIALLY_REMOVED.value, ChangeType.UNCERTAIN.value,
         ChangeType.EXPANDED.value, ChangeType.NEWLY_OBSERVED.value,
@@ -124,12 +115,11 @@ with tab_map:
 
     LayerControl(collapsed=False).add_to(m)
     st_folium(m, use_container_width=True, height=560, key="exec_overview_map", returned_objects=[])
-    st.caption("Use the layer control (top right) to isolate a single change type, or the fullscreen icon to expand the map.")
 
 with tab_trends:
     col_a, col_b = st.columns(2)
     with col_a:
-        section_title("Growth by barangay")
+        section_title("Growth by Barangay")
         if not installations_2025.empty:
             g2020 = installations_2020.groupby("barangay").size().rename("2020")
             g2025 = installations_2025.groupby("barangay").size().rename("2025")
@@ -140,7 +130,7 @@ with tab_trends:
             st.plotly_chart(fig, use_container_width=True)
 
     with col_b:
-        section_title("Change-type distribution")
+        section_title("Change-Type Distribution")
         dist = change_df["change_type"].value_counts().reset_index()
         dist.columns = ["change_type", "count"]
         fig = px.bar(
@@ -151,7 +141,7 @@ with tab_trends:
 
     col_c, col_d = st.columns(2)
     with col_c:
-        section_title("New installations by size class")
+        section_title("New Installations by Size Class")
         new_ids = change_df.loc[change_df["change_type"] == ChangeType.NEWLY_OBSERVED.value, "installation_id_2025"]
         new_installs = installations_2025[installations_2025["installation_id"].isin(new_ids)].copy()
         if not new_installs.empty:
@@ -165,7 +155,7 @@ with tab_trends:
             st.caption("No newly observed installations in this dataset.")
 
     with col_d:
-        section_title("Alerts by priority")
+        section_title("Alerts by Priority")
         if not alerts_df.empty:
             counts = alerts_df["priority"].value_counts().reindex([p.value for p in Priority]).fillna(0).reset_index()
             counts.columns = ["priority", "count"]
@@ -177,7 +167,7 @@ with tab_trends:
 
     col_e, col_f = st.columns(2)
     with col_e:
-        section_title("Alerts by review status")
+        section_title("Alerts by Review Status")
         if not alerts_df.empty:
             counts = alerts_df["review_status"].value_counts().reset_index()
             counts.columns = ["review_status", "count"]
@@ -188,7 +178,7 @@ with tab_trends:
             st.caption("No alerts were generated for this dataset.")
 
     with col_f:
-        section_title("Top PV-growth hotspots")
+        section_title("Top PV-Growth Hotspots")
         if not installations_2025.empty:
             new_ids = change_df.loc[change_df["change_type"] == ChangeType.NEWLY_OBSERVED.value, "installation_id_2025"]
             new_installs = installations_2025[installations_2025["installation_id"].isin(new_ids)]

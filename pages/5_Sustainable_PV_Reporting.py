@@ -21,15 +21,16 @@ from src.models import ChangeType, ReviewAction
 from src.pipeline import get_pipeline_result
 from src.review_store import apply_decisions_to_alerts
 from src.ui_components import (
+    ACCENT,
+    CHANGE_TYPE_COLORS,
     kpi_row,
     render_app_header,
-    render_disclaimer,
     render_factsheet_sections,
     render_footer,
     section_title,
 )
 
-st.set_page_config(page_title="Solance — Sustainable PV Reporting", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Sustainable PV Reporting", layout="wide")
 config = active_config()
 render_app_header(config, "Sustainable PV Reporting")
 
@@ -37,12 +38,6 @@ result = get_pipeline_result()
 if result is None:
     st.info("Choose a data source on the main **Solance** page first (demo data or upload two KMZ files).")
     st.stop()
-
-render_disclaimer(
-    "This report summarizes observed and estimated distributed PV capacity for verification and planning "
-    "purposes. Capacity figures are area-based estimates, not utility-confirmed nameplate capacity — see the "
-    "Methodology page for the exact assumptions used."
-)
 
 installs_2025 = result.installations_2025.copy()
 installs_2025["change_type"] = installs_2025["change_type"].fillna(ChangeType.EXISTING.value)
@@ -64,10 +59,6 @@ render_factsheet_sections(
         )
     ]
 )
-st.caption(
-    f"This demonstration covers a single municipality within {province_label}. A full deployment would roll up "
-    "every municipality a distribution utility serves into the same regional view."
-)
 
 capacity_2025 = float(installs_2025["estimated_capacity_kw"].sum()) if not installs_2025.empty else 0.0
 capacity_2020 = float(installs_2020["estimated_capacity_kw"].sum()) if not installs_2020.empty else 0.0
@@ -84,7 +75,7 @@ if not alerts_df.empty:
 else:
     registered_capacity_kw = 0.0
 
-section_title("Capacity summary", "Area-based estimates — see Methodology for the kW/m² assumption.")
+section_title("Capacity Summary")
 kpi_row(
     [
         (f"Total est. capacity, {config.app.observation_year_latest}", f"{capacity_2025:,.0f} kW", "Sum of estimated capacity across all installations observed."),
@@ -95,7 +86,24 @@ kpi_row(
 )
 
 st.divider()
-section_title("Capacity by barangay", "Existing vs. newly observed estimated capacity, by barangay.")
+section_title("Capacity Growth")
+# Always meaningful regardless of barangay granularity (unlike the chart
+# below, which needs a real per-barangay breakdown to say anything) — a
+# plain baseline-vs-latest comparison of total capacity, the same story the
+# "Capacity growth" KPI above states as a bare percentage.
+growth_chart_df = pd.DataFrame(
+    {
+        "year": [str(config.app.observation_year_baseline), str(config.app.observation_year_latest)],
+        "Estimated capacity (kW)": [capacity_2020, capacity_2025],
+    }
+)
+fig_growth = px.bar(growth_chart_df, x="year", y="Estimated capacity (kW)", text="Estimated capacity (kW)")
+fig_growth.update_traces(marker_color=ACCENT, texttemplate="%{text:,.0f} kW", textposition="outside")
+fig_growth.update_layout(margin=dict(l=10, r=10, t=30, b=10), height=320, xaxis_title=None, showlegend=False)
+st.plotly_chart(fig_growth, use_container_width=True)
+
+st.divider()
+section_title("Capacity by Barangay")
 if not installs_2025.empty:
     barangay_report = (
         installs_2025.groupby(["municipality", "barangay"])
@@ -116,27 +124,50 @@ if not installs_2025.empty:
         barangay_report["estimated_existing_capacity_kw"] + barangay_report["estimated_new_capacity_kw"]
     )
 
-    # Chart first, table underneath — the stacked bar is the at-a-glance
-    # takeaway; the table is the detail a reader drills into afterward.
-    chart_df = barangay_report.melt(
-        id_vars="barangay",
-        value_vars=["estimated_existing_capacity_kw", "estimated_new_capacity_kw"],
-        var_name="Capacity type", value_name="Estimated capacity (kW)",
+    # Some regions (e.g. Makati City) only have a single citywide KMZ per
+    # year rather than one file per barangay, so there's no real
+    # barangay-level breakdown to chart — "barangay" collapses to one row
+    # (the "—" placeholder). A bar chart with exactly one bar isn't a
+    # takeaway, it's dead space, so skip straight to the summary in that
+    # case rather than rendering a chart that has nothing to show.
+    has_barangay_breakdown = barangay_report["barangay"].nunique() > 1 or (
+        barangay_report["barangay"].nunique() == 1 and barangay_report["barangay"].iloc[0] != "—"
     )
-    chart_df["Capacity type"] = chart_df["Capacity type"].map(
-        {"estimated_existing_capacity_kw": "Existing", "estimated_new_capacity_kw": "Newly observed"}
-    )
-    fig = px.bar(
-        chart_df, x="barangay", y="Estimated capacity (kW)", color="Capacity type", barmode="stack",
-        color_discrete_map={"Existing": "#5B7A9C", "Newly observed": "#C2185B"},
-    )
-    fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=360)
-    st.plotly_chart(fig, use_container_width=True)
 
-    st.dataframe(barangay_report, use_container_width=True, hide_index=True)
+    if has_barangay_breakdown:
+        # Chart first, table underneath — the stacked bar is the at-a-glance
+        # takeaway; the table is the detail a reader drills into afterward.
+        chart_df = barangay_report.melt(
+            id_vars="barangay",
+            value_vars=["estimated_existing_capacity_kw", "estimated_new_capacity_kw"],
+            var_name="Capacity type", value_name="Estimated capacity (kW)",
+        )
+        chart_df["Capacity type"] = chart_df["Capacity type"].map(
+            {"estimated_existing_capacity_kw": "Existing", "estimated_new_capacity_kw": "Newly observed"}
+        )
+        # Reuse the app-wide semantic colors (blue = existing/context, red = newly
+        # observed/act-now) rather than a one-off pair — a client who's just
+        # learned "red means newly observed" from the maps elsewhere shouldn't
+        # see it turn a different color here.
+        fig = px.bar(
+            chart_df, x="barangay", y="Estimated capacity (kW)", color="Capacity type", barmode="stack",
+            color_discrete_map={
+                "Existing": CHANGE_TYPE_COLORS[ChangeType.EXISTING.value],
+                "Newly observed": CHANGE_TYPE_COLORS[ChangeType.NEWLY_OBSERVED.value],
+            },
+        )
+        fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=360)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.caption("Barangay-level breakdown isn't available for this dataset — see Capacity Summary above for totals.")
+
+    st.dataframe(
+        barangay_report if has_barangay_breakdown else barangay_report.drop(columns=["barangay"]),
+        use_container_width=True, hide_index=True,
+    )
 
     st.divider()
-    section_title("Export", "A consolidated table suitable for management or regulatory reporting.")
+    section_title("Export")
     metadata = build_export_metadata(config, result.is_synthetic)
     st.download_button(
         "Sustainability report (CSV)", data=dataframe_to_csv_bytes(barangay_report, metadata),

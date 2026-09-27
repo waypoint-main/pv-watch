@@ -317,29 +317,26 @@ def load_kmz_observations(
 
 
 _BARANGAY_FILENAME_PATTERN = re.compile(r"^\d{4}_Brgy_(.+)$", re.IGNORECASE)
-# Broader fallback for per-area KMZ files that don't follow the "_Brgy_"
-# convention (e.g. a single citywide file like ``2020_Makati_City.kmz``) —
-# still strips the leading 4-digit year so the label reads as a place name
-# rather than a raw filename stem.
-_YEAR_PREFIXED_FILENAME_PATTERN = re.compile(r"^\d{4}_(.+)$")
 
 
 def barangay_name_from_filename(filename: str) -> str:
-    """Derive a human-readable area name from a per-barangay/per-city KMZ filename.
+    """Derive a human-readable barangay name from a per-barangay KMZ filename.
 
-    E.g. ``2020_Brgy_Pulong_Santa_Cruz.kmz`` -> ``Pulong Santa Cruz`` and
-    ``2020_Makati_City.kmz`` -> ``Makati City``. Falls back to the bare
-    filename (no extension) if no leading-year pattern is found at all, so
-    unexpected filenames still load rather than error out.
+    E.g. ``2020_Brgy_Pulong_Santa_Cruz.kmz`` -> ``Pulong Santa Cruz``.
+
+    Some regions (e.g. Makati City) only have a single citywide KMZ per year
+    rather than one file per barangay — a filename like
+    ``2020_Makati_City.kmz`` doesn't follow the "_Brgy_" convention at all,
+    so there is no real barangay-level breakdown to report. Returning the
+    municipality name in that case would silently masquerade as barangay
+    granularity in every barangay column/groupby across the app, so this
+    returns "—" instead — an honest "not available" rather than a name.
     """
     stem = Path(filename).stem
     match = _BARANGAY_FILENAME_PATTERN.match(stem)
     if match:
-        raw = match.group(1)
-    else:
-        year_match = _YEAR_PREFIXED_FILENAME_PATTERN.match(stem)
-        raw = year_match.group(1) if year_match else stem
-    return raw.replace("_", " ").strip()
+        return match.group(1).replace("_", " ").strip()
+    return "—"
 
 
 def load_kmz_folder_observations(

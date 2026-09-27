@@ -12,104 +12,82 @@ import streamlit as st
 
 from src.region import active_config
 from src.pipeline import get_pipeline_result
-from src.ui_components import render_app_header, render_disclaimer, render_footer, section_title
+from src.ui_components import render_app_header, render_footer, section_title
 
-st.set_page_config(page_title="Solance — Methodology", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Methodology", layout="wide")
 config = active_config()
 render_app_header(config, "Data & Methodology")
-
-render_disclaimer(
-    "This demonstration identifies geospatial changes that may warrant utility verification. "
-    "It does not determine legal, permitting, registration, ownership, export, safety, or "
-    "interconnection status."
-)
 
 result = get_pipeline_result()
 
 tab_data, tab_rules, tab_limits = st.tabs(["Data & Processing", "Rules & Thresholds", "Limitations & Review"])
 
 with tab_data:
-    section_title("Input data & observation dates")
+    section_title("Input Data & Observation Dates")
     st.markdown(
         f"""
-Solance compares two manually annotated rooftop PV polygon inventories:
-
-- **Baseline:** {config.app.observation_year_baseline} (nominal observation date used when a source file has no
-  per-feature date: `{config.app.observation_date_baseline}`)
-- **Latest:** {config.app.observation_year_latest} (nominal observation date: `{config.app.observation_date_latest}`)
-
-Because the only two observation points are {config.app.observation_year_baseline} and
-{config.app.observation_year_latest}, Solance never claims an installation was *built* in
-{config.app.observation_year_latest}. A newly observed installation is instead described as: *"First observed in the
-{config.app.observation_year_latest} imagery, with a possible installation window between the
-{config.app.observation_year_baseline} and {config.app.observation_year_latest} observation dates."* Likewise, new systems
-are described as needing registration/interconnection **verification** — never as "illegal" or definitively
-"unregistered."
+- **Baseline:** {config.app.observation_year_baseline} (`{config.app.observation_date_baseline}`)
+- **Latest:** {config.app.observation_year_latest} (`{config.app.observation_date_latest}`)
+- Only two observation points exist, so Solance never claims an installation was *built* in
+  {config.app.observation_year_latest} — only *first observed* then, with a possible installation window between
+  the two dates.
+- New systems are flagged for registration/interconnection **verification** — never labeled "illegal" or
+  definitively "unregistered."
 """
     )
 
-    section_title("KMZ processing workflow")
+    section_title("KMZ Processing Workflow")
     st.markdown(
         """
-1. Safely extract the KMZ (zip) archive and locate its KML document (warns if multiple KML files are present; uses
-   the first / `doc.kml`).
-2. Parse `<Placemark>` geometries directly from KML XML (Polygon / MultiGeometry-of-polygons only); unsupported
-   geometry types (points, lines) are skipped with a recorded warning rather than crashing the app.
-3. Preserve any `ExtendedData`/`SimpleData` attributes found (e.g. a parcel or building ID), when present.
-4. Assign a source year and a nominal observation date.
-5. Validate geometries; repair invalid ones (`shapely.make_valid` / zero-width buffer) where possible; drop empty,
-   unsupported, or unrepairable geometries and duplicate geometries, all with recorded warnings.
-6. Compute polygon area in square meters using a projected CRS — **never** directly in EPSG:4326.
-7. Assemble the normalized observation schema (`observation_id`, `source_year`, `observation_date`, `geometry`,
-   `area_m2`, `imagery_source`, `annotation_confidence`, `qa_status`, plus `parcel_id`/`raw_name` when available).
+1. Extract the KMZ archive and parse its KML document.
+2. Parse `<Placemark>` polygon geometries; unsupported types (points, lines) are skipped with a warning.
+3. Preserve `ExtendedData`/`SimpleData` attributes (e.g. parcel or building ID) when present.
+4. Assign a source year and nominal observation date.
+5. Validate and repair geometries where possible; drop empty, unrepairable, or duplicate geometries.
+6. Compute polygon area in a projected CRS — never directly in EPSG:4326.
+7. Assemble the normalized observation schema for downstream matching.
 """
     )
 
-    section_title("CRS handling")
+    section_title("CRS Handling")
     st.markdown(
         f"""
-KML/KMZ geometry is always WGS84 (EPSG:4326) per the KML specification. For any area or distance calculation, PV
-Watch reprojects to a projected (meters) CRS — auto-selecting the UTM zone containing the dataset's centroid via
-GeoPandas' `estimate_utm_crs()`, or using a user-supplied override. Fallback CRS if auto-selection fails:
-`{config.crs.fallback_projected_crs}`.
+- KML/KMZ geometry is WGS84 (EPSG:4326) by spec; area/distance math reprojects to a projected (meters) CRS.
+- Solance auto-selects the UTM zone via GeoPandas' `estimate_utm_crs()`, or uses a user override.
+- Fallback CRS if auto-selection fails: `{config.crs.fallback_projected_crs}`.
 """
     )
     if result is not None:
-        st.info(f"For the currently loaded dataset, Solance selected **{result.projected_crs_used}** for area/distance calculations.")
+        st.info(f"Selected for the current dataset: **{result.projected_crs_used}**.")
 
-    section_title("Data provenance")
+    section_title("Data Provenance")
     st.markdown(
         """
-Demo mode uses procedurally generated synthetic geometry placed near a real Philippine municipality for visual
-realism only — it does not represent actual PV installations, actual parcels, or actual utility infrastructure.
-Uploaded KMZ files are processed entirely in-session and are not sent to any third party by this application.
+- Demo mode uses synthetic geometry placed near a real Philippine municipality for visual realism only — it does
+  not represent actual installations, parcels, or utility infrastructure.
+- Uploaded KMZ files are processed in-session and are not sent to any third party.
 """
     )
 
 with tab_rules:
-    section_title("Installation grouping (heuristic)")
+    section_title("Installation Grouping (Heuristic)")
     st.markdown(
         f"""
-Individual digitized array polygons are grouped into installations using: proximity (polygons within
-**{config.installation_grouping.grouping_distance_m:.0f} m** of one another are merged, computed via buffered
-spatial-index intersection — a union-find over pairwise proximity), and a shared parcel/building ID when available
-(takes priority over pure distance). **This is a heuristic, not ground truth.** Without authoritative parcel/building
-footprints, grouping can over-merge nearby-but-distinct rooftops or under-merge one rooftop's separated arrays.
-Always validate grouped installations before operational use.
+- Array polygons within **{config.installation_grouping.grouping_distance_m:.0f} m** of one another are merged; a
+  shared parcel/building ID (when available) takes priority over pure distance.
+- **This is a heuristic, not ground truth** — always validate grouped installations before operational use.
 """
     )
 
-    section_title("Change-matching rules & classification thresholds")
+    section_title("Change-Matching Rules & Thresholds")
     cd = config.change_detection
     st.markdown(
         f"""
-For every {config.app.observation_year_latest} installation, Solance searches for candidate
-{config.app.observation_year_baseline} installations within a buffer of the maximum centroid distance, then computes:
-intersection-over-union (IoU), the percentage of the {config.app.observation_year_baseline} polygon covered by the
-{config.app.observation_year_latest} polygon (and vice versa), centroid displacement, and area change. Exact polygon
-equality is never required.
+- For every {config.app.observation_year_latest} installation, Solance searches {config.app.observation_year_baseline}
+  candidates nearby and computes intersection-over-union, coverage percentage, centroid displacement, and area
+  change. Exact polygon equality is never required.
 
-**Current thresholds (initial demonstration assumptions — not scientifically validated):**
+**Current thresholds (demonstration assumptions — not scientifically validated):**
 """
     )
     st.json(
@@ -128,79 +106,71 @@ equality is never required.
         """
 **Classification rules:**
 
-- **Existing** — a credible match (IoU or overlap above threshold) with area change within the stable-area threshold.
+- **Existing** — a credible match with area change within the stable-area threshold.
 - **Expanded** — a credible match whose area grew beyond the expansion threshold.
-- **Newly observed** — no credible match found in the baseline inventory.
+- **Newly observed** — no credible match in the baseline inventory.
 - **Potentially removed** — a baseline installation with no credible match in the latest inventory.
-- **Uncertain** — ambiguous multi-candidate matches, near-threshold match scores, or area changes that are neither
-  clearly stable nor clearly expansion. Always flagged for human review.
+- **Uncertain** — ambiguous or near-threshold matches; always flagged for human review.
 
-Every change record stores a human-readable `classification_reason` explaining exactly why it was classified the
-way it was (visible in the PV Change Explorer and Dark Solar Alerts).
+Every change record stores a `classification_reason` (visible in PV Change Explorer and Dark Solar Alerts).
 """
     )
 
-    section_title("Capacity estimation assumptions")
+    section_title("Capacity Estimation Assumptions")
     ce = config.capacity_estimation
     st.markdown(
         f"""
-`estimated_capacity_kw = pv_area_m2 × {ce.kw_per_m2} kW/m²` — a **demo default factor only**. Actual capacity depends
-on module efficiency, panel dimensions, roof layout, tilt, spacing, obstructions, and PV technology type, none of
-which are observable from polygon area alone. Installations at or above **{ce.large_system_capacity_kw:.0f} kW**
-(area ≥ **{config.alert_engine.large_installation_area_m2:.0f} m²**) are flagged as "large" for alerting purposes.
-All capacity figures in this app are estimates, never utility-confirmed nameplate capacity.
+- `estimated_capacity_kw = pv_area_m2 × {ce.kw_per_m2} kW/m²` — a **demo default factor only**; real capacity also
+  depends on module efficiency, tilt, spacing, and technology type.
+- Installations ≥ **{ce.large_system_capacity_kw:.0f} kW** (area ≥ **{config.alert_engine.large_installation_area_m2:.0f} m²**) are flagged "large."
+- All capacity figures are estimates, never utility-confirmed nameplate capacity.
 """
     )
 
-    section_title("Registry-matching logic (synthetic demo registry)")
+    section_title("Registry-Matching Logic (Synthetic Demo Registry)")
     rm = config.registry_matching
     st.markdown(
         f"""
-The registry is entirely **synthetic** — fictional customer references, no real names or account numbers. Matching
-is purely spatial-proximity based (not dependent on any generator-internal ID) so the same logic would apply to a
-real registry with real customer coordinates: a registry point within **{rm.spatial_match_distance_m:.0f} m** of an
-installation (and reciprocally nearest to it) is a confident match, refined into exact / pending / off-grid /
-capacity-discrepancy using the registry record's own fields; within **{rm.probable_match_distance_m:.0f} m** is a
-probable match; two similarly-close candidates (within 5 m of each other) is ambiguous; no candidate within range is
-"no registry match."
+- The registry is entirely **synthetic** — fictional references, no real names or account numbers.
+- Matching is spatial-proximity based: within **{rm.spatial_match_distance_m:.0f} m** is a confident match; within
+  **{rm.probable_match_distance_m:.0f} m** is probable; equally-close candidates are ambiguous; otherwise "no
+  registry match."
 """
     )
 
-    section_title("Alert-priority logic")
+    section_title("Alert-Priority Logic")
     st.markdown(
         """
-Two concepts are kept separate: **detection confidence** (how certain the geospatial observation/match is) and
-**operational priority** (how important the case may be to the utility). A weighted score combines change type,
-registry-match concerns, capacity discrepancy, large-installation status, transformer clustering, low detection
-confidence, and network review status. The total score maps to Priority 1 (Immediate verification) through
-Priority 4 (Human review required). Every alert stores a human-readable `priority_reason`.
+- **Detection confidence** (how certain the match is) and **operational priority** (how important the case is) are
+  kept separate.
+- A weighted score combines change type, registry concerns, capacity discrepancy, large-installation status,
+  transformer clustering, and confidence — mapping to Priority 1 (immediate) through Priority 4 (human review).
+- Every alert stores a `priority_reason`.
 """
     )
     st.json({"weights": config.alert_engine.weights, "priority_1_min_score": config.alert_engine.priority_1_min_score,
              "priority_2_min_score": config.alert_engine.priority_2_min_score, "priority_3_min_score": config.alert_engine.priority_3_min_score})
 
 with tab_limits:
-    section_title("Known limitations")
+    section_title("Known Limitations")
     st.markdown(
         """
-- Installation grouping, change classification, and registry/network matching are all heuristic, threshold-based,
-  and demonstration-tuned — not scientifically validated or utility-certified.
-- The registry, transformers, feeders, and their capacities are entirely synthetic demonstration data.
-- Hosting-capacity indicators are simple illustrative ratios, not a distribution-impact study or power-flow analysis.
-- Two observation years cannot establish a precise installation date, ownership, permitting, or interconnection
-  status — only a plausible window and a case for verification.
+- Grouping, classification, and registry/network matching are heuristic and demonstration-tuned — not
+  scientifically validated or utility-certified.
+- The registry, transformers, feeders, and their capacities are synthetic demonstration data.
+- Hosting-capacity indicators are illustrative ratios, not a distribution-impact study or power-flow analysis.
+- Two observation years give a plausible window, not a precise date, ownership, permitting, or interconnection status.
 - KMZ ingestion assumes Polygon/MultiPolygon rooftop footprints; other KML feature types are skipped.
-- This MVP does not include automated satellite-image download, ML-based PV detection, real-time notifications,
-  electrical load-flow simulation, customer identity lookup, production authentication, or full work-order
-  management — see the project README for the roadmap.
+- This MVP excludes automated satellite-image download, ML-based PV detection, real-time notifications, load-flow
+  simulation, customer identity lookup, and production authentication — see the project README for the roadmap.
 """
     )
 
-    section_title("Human-review requirements")
+    section_title("Human-Review Requirement")
     st.markdown(
-        "Every newly observed, expanded, uncertain, or potentially-removed case — and every registry or network concern "
-        "— is surfaced as an alert requiring human review before any customer outreach, registration action, safety "
-        "review, or grid-planning decision is made. Solance supports and accelerates that review; it does not replace it."
+        "Every newly observed, expanded, uncertain, or potentially-removed case is surfaced as an alert requiring "
+        "human review before any outreach, registration, safety, or grid-planning decision. Solance accelerates "
+        "that review; it does not replace it."
     )
 
 render_footer(config)

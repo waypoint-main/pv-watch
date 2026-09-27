@@ -351,6 +351,43 @@ def inject_base_style() -> None:
         .pv-legend-item {{ display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }}
         .pv-legend-dot {{ width: 9px; height: 9px; border-radius: 2px; flex: 0 0 auto; }}
 
+        /* ---------- Case-management stepper ---------- */
+        .pv-stepper {{ display: flex; align-items: center; flex-wrap: wrap; margin: 0.3rem 0 0.15rem 0; }}
+        .pv-stepper-step {{ display: flex; align-items: center; }}
+        .pv-stepper-dot {{
+            width: 20px; height: 20px; border-radius: 50%; flex: 0 0 auto; background: {BORDER};
+            display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff;
+        }}
+        .pv-stepper-done .pv-stepper-dot {{ background: var(--step-color); }}
+        .pv-stepper-current .pv-stepper-dot {{
+            background: var(--step-color); border: 2px solid {INK}; width: 24px; height: 24px; font-size: 0.7rem;
+        }}
+        .pv-stepper-upcoming .pv-stepper-dot {{ background: {CARD_BG}; border: 2px solid {BORDER}; }}
+        .pv-stepper-label {{ font-size: 0.8rem; margin: 0 0.6rem 0 0.4rem; white-space: nowrap; color: {INK_MUTED}; }}
+        .pv-stepper-done .pv-stepper-label {{ color: {INK}; }}
+        .pv-stepper-current .pv-stepper-label {{ color: {INK}; font-weight: 700; }}
+        .pv-stepper-line {{ flex: 1 1 20px; height: 2px; background: {BORDER}; min-width: 16px; }}
+        .pv-stepper-line-done {{ background: {INK_MUTED}; }}
+        .pv-stepper-alt {{ font-size: 0.74rem; color: {INK_MUTED}; margin: -0.1rem 0 0.7rem 0.1rem; }}
+        .pv-stepper-alt b {{ color: {INK}; }}
+
+        /* ---------- Case-queue funnel (aggregate counterpart to the stepper
+           above — replaces a row of near-identical KPI cards with one
+           connected flow, so the queue's shape reads at a glance) ---------- */
+        .pv-funnel {{ display: flex; align-items: stretch; gap: 0.5rem; flex-wrap: wrap; margin: 0.3rem 0 0.3rem 0; }}
+        .pv-funnel-stage {{
+            background: {CARD_BG}; border: 1px solid {BORDER}; border-top: 3px solid var(--stage-color);
+            border-radius: 8px; padding: 0.65rem 1.1rem; flex: 1 1 140px; text-align: center; min-width: 130px;
+        }}
+        .pv-funnel-count {{ font-family: {MONO_STACK} !important; font-size: 1.55rem; font-weight: 700; color: {INK}; line-height: 1.1; }}
+        .pv-funnel-label {{
+            font-size: 0.7rem; color: {INK_MUTED}; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.03em; margin-top: 0.3rem; white-space: nowrap;
+        }}
+        .pv-funnel-arrow {{ display: flex; align-items: center; color: {BORDER}; font-size: 1.2rem; flex: 0 0 auto; }}
+        .pv-funnel-branch {{ font-size: 0.78rem; color: {INK_MUTED}; margin: 0.3rem 0 0.7rem 0.1rem; }}
+        .pv-funnel-branch b {{ color: {INK}; }}
+
         /* ---------- Tabs ---------- */
         button[data-baseweb="tab"] {{ font-weight: 600; color: {INK_MUTED}; }}
         button[data-baseweb="tab"][aria-selected="true"] {{ color: {INK}; }}
@@ -490,6 +527,102 @@ def review_state_badge_html(state: str) -> str:
     return f"<span class='pv-badge' style='background-color:{color}'>{state}{suffix}</span>"
 
 
+_CASE_MAIN_PATH = [
+    ReviewAction.FOR_INSPECTION,
+    ReviewAction.FOR_REGISTRATION,
+    ReviewAction.ONGOING_REGISTRATION,
+    ReviewAction.REGISTERED,
+]
+
+
+def render_case_stepper(current_state: ReviewAction) -> None:
+    """A horizontal progress stepper showing where one case sits in
+    Solance's fixed two-branch review workflow: a visual companion to the
+    Case History log and the Reviewer Action form on the Dark Solar Alerts
+    page, so a viewer can see at a glance how far along a case is without
+    reading through badges or a history table.
+    """
+    if current_state == ReviewAction.FALSE_POSITIVE:
+        # The alternate branch — the main 4-step path no longer applies, so
+        # show the two nodes actually taken rather than a misleading chain.
+        insp_color = REVIEW_STATE_COLORS[ReviewAction.FOR_INSPECTION.value]
+        fp_color = REVIEW_STATE_COLORS[ReviewAction.FALSE_POSITIVE.value]
+        render_html(
+            f"""
+            <div class="pv-stepper">
+                <div class="pv-stepper-step pv-stepper-done" style="--step-color:{insp_color}">
+                    <span class="pv-stepper-dot">✓</span><span class="pv-stepper-label">For inspection</span>
+                </div>
+                <span class="pv-stepper-line pv-stepper-line-done"></span>
+                <div class="pv-stepper-step pv-stepper-current" style="--step-color:{fp_color}">
+                    <span class="pv-stepper-dot"></span><span class="pv-stepper-label">False positive</span>
+                </div>
+            </div>
+            """
+        )
+        return
+
+    current_idx = _CASE_MAIN_PATH.index(current_state) if current_state in _CASE_MAIN_PATH else -1
+    parts: list[str] = []
+    for i, step in enumerate(_CASE_MAIN_PATH):
+        color = REVIEW_STATE_COLORS[step.value]
+        if i < current_idx:
+            cls, dot_inner = "pv-stepper-done", "✓"
+        elif i == current_idx:
+            cls, dot_inner = "pv-stepper-current", ""
+        else:
+            cls, dot_inner = "pv-stepper-upcoming", ""
+        parts.append(
+            f'<div class="pv-stepper-step {cls}" style="--step-color:{color}">'
+            f'<span class="pv-stepper-dot">{dot_inner}</span><span class="pv-stepper-label">{step.value}</span></div>'
+        )
+        if i < len(_CASE_MAIN_PATH) - 1:
+            line_cls = "pv-stepper-line-done" if i < current_idx else ""
+            parts.append(f'<span class="pv-stepper-line {line_cls}"></span>')
+
+    render_html(f'<div class="pv-stepper">{"".join(parts)}</div>')
+    st.markdown(
+        '<div class="pv-stepper-alt">Alternate outcome from For inspection: <b>False positive</b> (closed).</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_case_queue_funnel(state_counts) -> None:
+    """A connected, left-to-right view of how many cases sit in each stage of
+    the review workflow — the aggregate counterpart to ``render_case_stepper``
+    above. Replaces what would otherwise be five near-identical KPI cards
+    (one per state) with a single flow that reads as the process it
+    represents, using the same per-state colors as the stepper and the case
+    badges elsewhere on this page.
+
+    ``state_counts`` is anything with a ``.get(key, default)`` lookup keyed
+    by ``ReviewAction`` value strings — a plain dict or a pandas Series
+    (e.g. ``df["review_status"].value_counts()``) both work.
+    """
+
+    def _count(state: ReviewAction) -> int:
+        return int(state_counts.get(state.value, 0))
+
+    parts: list[str] = []
+    for i, step in enumerate(_CASE_MAIN_PATH):
+        color = REVIEW_STATE_COLORS[step.value]
+        parts.append(
+            f'<div class="pv-funnel-stage" style="--stage-color:{color}">'
+            f'<div class="pv-funnel-count">{_count(step):,}</div>'
+            f'<div class="pv-funnel-label">{step.value}</div></div>'
+        )
+        if i < len(_CASE_MAIN_PATH) - 1:
+            parts.append('<span class="pv-funnel-arrow">&rarr;</span>')
+
+    render_html(f'<div class="pv-funnel">{"".join(parts)}</div>')
+    fp_count = _count(ReviewAction.FALSE_POSITIVE)
+    if fp_count:
+        st.markdown(
+            f'<div class="pv-funnel-branch">+ <b>{fp_count:,}</b> closed as False positive (not shown above).</div>',
+            unsafe_allow_html=True,
+        )
+
+
 def kpi_row(items: list[tuple[str, str, Optional[str]]]) -> None:
     """Render a responsive grid of polished KPI cards.
 
@@ -614,12 +747,25 @@ def make_base_map(center_lat: float, center_lon: float, zoom: int = 15, locate: 
         tiles=None,
         control_scale=True,
     )
+    # Esri's Light Gray Canvas tile cache only has real imagery up through
+    # zoom level 16 anywhere in the world (confirmed via the service's own
+    # ?f=json metadata) — for the Philippines specifically, coverage may
+    # stop even earlier. Any request past its cached max level gets back a
+    # placeholder tile with "Map data not yet available at this zoom level"
+    # baked into the image instead of a 404, which is what was surfacing on
+    # the tightly-zoomed Dark Solar Alerts case map (zoom 19). Setting
+    # max_native_zoom tells Leaflet to stop requesting past that ceiling and
+    # instead smoothly upscale the deepest tile it has — the polygons drawn
+    # on top stay perfectly sharp either way since they're vector overlays,
+    # not part of the raster tile.
     folium.TileLayer(
         tiles=_BASEMAP_TILES,
         attr=_BASEMAP_ATTR,
         name="Light Gray Base",
         overlay=False,
         control=False,
+        max_zoom=21,
+        max_native_zoom=16,
     ).add_to(fmap)
     # Labels/roads overlay on top of the plain grey canvas — not exposed as
     # a toggle (there's no folium.LayerControl in this app) since it should
@@ -630,6 +776,8 @@ def make_base_map(center_lat: float, center_lon: float, zoom: int = 15, locate: 
         name="Labels",
         overlay=True,
         control=False,
+        max_zoom=21,
+        max_native_zoom=16,
     ).add_to(fmap)
     Fullscreen(position="topright", title="Expand map", title_cancel="Exit fullscreen").add_to(fmap)
     if locate:

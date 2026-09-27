@@ -42,10 +42,10 @@ def _render_region_gate() -> None:
     reviewer doesn't land in Laguna's data (or vice versa) by accident, and
     so each region's data source / upload state stays scoped to itself.
     """
-    st.set_page_config(page_title="Solance — Region Access", page_icon="☀️", layout="centered")
+    st.set_page_config(page_title="Solance — Region Access", layout="centered")
     inject_base_style()  # shared fonts/button styling, so the gate matches the rest of the app
     st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
-    st.markdown("## ☀️ Solance")
+    st.markdown("## Solance")
     st.caption("Distributed Solar Change Intelligence")
     st.write("")
     st.markdown("**Enter your region to continue.**")

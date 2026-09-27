@@ -37,14 +37,18 @@ from src.models import REVIEW_END_STATE_VALUES, REVIEW_STATE_TRANSITIONS, Review
 from src.pipeline import get_pipeline_result
 from src.review_store import all_decisions_df, apply_decisions_to_alerts, get_decision, save_decision
 from src.ui_components import (
+    BORDER,
     CHANGE_TYPE_COLORS,
     CHANGE_TYPE_EMPHASIS,
+    INK_MUTED,
     REVIEW_STATE_COLORS,
     add_polygon_layer,
     kpi_row,
     make_base_map,
     priority_badge_html,
     render_app_header,
+    render_case_queue_funnel,
+    render_case_stepper,
     render_factsheet_sections,
     render_footer,
     render_html,
@@ -54,7 +58,7 @@ from src.ui_components import (
     section_title,
 )
 
-st.set_page_config(page_title="Solance — Dark Solar Alerts", page_icon="☀️", layout="wide")
+st.set_page_config(page_title="Solance — Dark Solar Alerts", layout="wide")
 config = active_config()
 render_app_header(config, "Dark Solar Alerts")
 
@@ -68,11 +72,7 @@ if alerts_df.empty:
     st.success("No alerts were generated for the current dataset and thresholds.")
     st.stop()
 
-st.caption(
-    "**\"Dark solar\"** = a PV system visible in imagery but not yet confirmed registered with the utility. "
-    "Case states below are seeded with **illustrative synthetic starting points** so this queue reads as an "
-    "actively managed inbox — no real registration action has occurred. Reviewer actions you take from here are real."
-)
+st.caption("**\"Dark solar\"** — a PV system visible in imagery but not yet confirmed registered with the utility.")
 
 STATE_ORDER = [
     ReviewAction.FOR_INSPECTION, ReviewAction.FOR_REGISTRATION, ReviewAction.ONGOING_REGISTRATION,
@@ -98,7 +98,7 @@ filtered = alerts_df[
 ].sort_values(["priority", "priority_score"], ascending=[True, False])
 
 state_counts = filtered["review_status"].value_counts()
-kpi_row([(s.value, f"{int(state_counts.get(s.value, 0)):,}", None) for s in STATE_ORDER])
+render_case_queue_funnel(state_counts)
 
 p1p2_open = int(
     (
@@ -117,12 +117,6 @@ kpi_row(
         ("Fed back to registration inventory", f"{registered_count:,} ({registered_capacity_kw:,.0f} kW)", "Cases reaching Registered — see Sustainable PV Reporting for the capacity rollup."),
     ]
 )
-st.caption(
-    "In a production deployment, every case reaching **Registered** would be written back to the utility's own "
-    "registration inventory — closing the loop shown in the Solance workflow, from paper-based registration "
-    "records through to a confirmed, geo-located entry."
-)
-
 tab_queue, tab_review = st.tabs(["Queue", "Review & Decide"])
 
 display_cols = [
@@ -131,7 +125,7 @@ display_cols = [
 ]
 
 with tab_queue:
-    section_title(f"Alerts ({len(filtered):,} of {len(alerts_df):,})", "Sorted by priority, then priority score. Open the Review & Decide tab to act on one.")
+    section_title(f"Alerts ({len(filtered):,} of {len(alerts_df):,})")
     st.dataframe(filtered[display_cols], use_container_width=True, hide_index=True, height=420)
 
     metadata = build_export_metadata(config, result.is_synthetic)
@@ -149,13 +143,28 @@ with tab_queue:
         )
 
 with tab_review:
-    section_title("Choose a state to review", "Group the queue by case state, then pick one alert within it.")
-    state_labels = [f"{s.value} ({int(state_counts.get(s.value, 0))})" for s in STATE_ORDER]
-    label_to_state = {label: s for label, s in zip(state_labels, STATE_ORDER)}
-    # Default to the first state group that actually has alerts in view.
-    default_idx = next((i for i, s in enumerate(STATE_ORDER) if state_counts.get(s.value, 0) > 0), 0)
-    chosen_label = st.radio("Case state", state_labels, index=default_idx, horizontal=True, label_visibility="collapsed")
-    chosen_state = label_to_state[chosen_label]
+    # A just-saved decision is stashed in session state (below) rather than
+    # shown inline before st.rerun() — Streamlit discards anything rendered
+    # in the same run right before a rerun, so surfacing it here, on the
+    # fresh run, is what actually keeps the confirmation on screen for a
+    # live demo instead of an unexplained flicker.
+    if "dsa_last_decision" in st.session_state:
+        _last = st.session_state.pop("dsa_last_decision")
+        st.success(f"**{_last['alert_id']}** moved: {_last['from']} → **{_last['to']}**")
+
+    section_title("Choose a State to Review")
+    state_counts_map = {s: int(state_counts.get(s.value, 0)) for s in STATE_ORDER}
+    default_idx = next((i for i, s in enumerate(STATE_ORDER) if state_counts_map[s] > 0), 0)
+    # Explicit key + enum-valued options (rather than count-embedded label
+    # strings as the options themselves) so the presenter's chosen tab
+    # sticks across reruns — previously, every saved decision changed the
+    # counts, which changed the option strings, which reset the widget and
+    # silently snapped the view back to `default_idx` after every click.
+    chosen_state = st.radio(
+        "Case state", STATE_ORDER, index=default_idx, horizontal=True,
+        format_func=lambda s: f"{s.value} ({state_counts_map[s]})",
+        label_visibility="collapsed", key="dsa_review_state",
+    )
 
     state_filtered = filtered[filtered["review_status"] == chosen_state.value]
     alert_ids = state_filtered["alert_id"].tolist()
@@ -163,10 +172,22 @@ with tab_review:
         st.info(f"No alerts are currently in **{chosen_state.value}**. Pick another state above, or adjust the filters.")
         st.stop()
 
-    selected_alert_id = st.selectbox(f"Select an alert to review ({len(alert_ids)} in this state)", alert_ids)
+    def _alert_option_label(aid: str) -> str:
+        r = state_filtered.loc[state_filtered["alert_id"] == aid].iloc[0]
+        return f"{aid} — {r['priority']} · {r['estimated_capacity_kw']:,.1f} kW · {r['barangay']}"
+
+    # Keyed per state tab so switching tabs and back remembers your spot,
+    # and so it falls forward to the next open case in the same queue (not
+    # a random one) once the previously selected alert is resolved away.
+    selected_alert_id = st.selectbox(
+        f"Select an alert to review ({len(alert_ids)} in this state)",
+        alert_ids, format_func=_alert_option_label, key=f"dsa_alert_select_{chosen_state.value}",
+    )
     alert_row = alerts_df[alerts_df["alert_id"] == selected_alert_id].iloc[0]
     change_row = result.change_df[result.change_df["change_id"] == alert_row["change_id"]].iloc[0]
     current_decision = get_decision(selected_alert_id)
+
+    render_case_stepper(current_decision.state)
 
     col_map, col_detail = st.columns([1.1, 1])
 
@@ -212,10 +233,7 @@ with tab_review:
         st.markdown(f"#### {alert_row['alert_id']} — {alert_row['change_type']}", unsafe_allow_html=True)
         badge_row = f"{priority_badge_html(alert_row['priority'])} {review_state_badge_html(chosen_state.value)}"
         st.markdown(badge_row, unsafe_allow_html=True)
-        st.markdown(
-            f"**Detection window:** {config.app.observation_date_baseline} → {config.app.observation_date_latest} "
-            "(possible installation window; not a construction date)"
-        )
+        st.markdown(f"**Detection window:** {config.app.observation_date_baseline} → {config.app.observation_date_latest}")
         area_2020 = safe_number(change_row.get("area_2020_m2"))
         area_2025 = safe_number(change_row.get("area_2025_m2"))
         area_change_pct = safe_number(change_row.get("area_change_percent"))
@@ -227,13 +245,13 @@ with tab_review:
                 ("Estimated capacity (est. only)", f"{alert_row['estimated_capacity_kw']:,.1f} kW", "Demo estimate — not utility-confirmed."),
             ]
         )
-        st.caption(f"Detection confidence: **{alert_row['detection_confidence']}** (separate from operational priority)")
+        st.caption(f"Detection confidence: **{alert_row['detection_confidence']}**")
 
         render_factsheet_sections(
             [
-                ("Registry comparison (synthetic demo data)", [("Status", alert_row["registry_match_status"])]),
+                ("Registry comparison", [("Status", alert_row["registry_match_status"])]),
                 (
-                    "Network context (synthetic demo data)",
+                    "Network context",
                     [("Transformer", alert_row["transformer_id"]), ("Feeder", alert_row["feeder_id"])],
                 ),
             ]
@@ -249,7 +267,7 @@ with tab_review:
     col_history, col_action = st.columns([1, 1])
 
     with col_history:
-        section_title("Case history", "Every state change is logged with the date and time it happened.")
+        section_title("Case History")
         history = current_decision.history
         if not history:
             st.caption("No state changes logged yet.")
@@ -257,9 +275,9 @@ with tab_review:
             rows = "".join(
                 f"""
                 <div style="display:flex;justify-content:space-between;gap:0.75rem;padding:0.4rem 0;
-                            border-bottom:1px solid #E1E8ED;font-size:0.85rem;">
+                            border-bottom:1px solid {BORDER};font-size:0.85rem;">
                     <span>{review_state_badge_html(h['state'])}</span>
-                    <span style="color:#5B6B76;white-space:nowrap;">{h['changed_at'][:16].replace('T', ' ')}</span>
+                    <span style="color:{INK_MUTED};white-space:nowrap;">{h['changed_at'][:16].replace('T', ' ')}</span>
                 </div>
                 """
                 for h in history
@@ -269,27 +287,33 @@ with tab_review:
                 st.caption(f"Current state entered: **{current_decision.state_changed_at.strftime('%Y-%m-%d %H:%M')}**")
 
     with col_action:
-        section_title("Reviewer action", "Record the outcome of your verification.")
+        section_title("Reviewer Action")
         current_state = current_decision.state
         allowed_next = REVIEW_STATE_TRANSITIONS.get(current_state, [])
-        state_options = [current_state] + [s for s in allowed_next if s != current_state]
+        # Advance-first ordering: the natural next step in the workflow is
+        # listed (and defaulted to via index=0) ahead of "stay put," so
+        # submitting the form is a single, meaningful click that visibly
+        # moves the case forward — not a no-op save of the current state.
+        state_options = allowed_next + [current_state] if allowed_next else [current_state]
         is_end_state = current_state.value in REVIEW_END_STATE_VALUES
 
         if is_end_state:
-            st.caption(f"This case is **closed** ({current_state.value}) — an end state of the workflow. Notes/assignment can still be updated.")
+            st.caption(f"Case closed — **{current_state.value}**.")
 
         with st.form(key=f"review_form_{selected_alert_id}"):
             new_state_value = st.selectbox(
                 "Case state", [s.value for s in state_options],
                 index=0, disabled=is_end_state,
-                help="Only the current state and its valid next step(s) are selectable.",
+                help="Defaults to the next step in the workflow. Pick the current state instead to save notes only.",
             )
             notes = st.text_area("Reviewer notes", value=current_decision.notes)
             assigned_to = st.text_input("Assigned to", value=current_decision.assigned_to or alert_row.get("assigned_to", ""))
             submitted = st.form_submit_button("Save review decision")
             if submitted:
                 save_decision(selected_alert_id, new_state_value, notes, assigned_to)
-                st.success(f"Saved: {selected_alert_id} → {new_state_value}.")
+                st.session_state["dsa_last_decision"] = {
+                    "alert_id": selected_alert_id, "from": current_state.value, "to": new_state_value,
+                }
                 st.rerun()
 
 render_footer(config)

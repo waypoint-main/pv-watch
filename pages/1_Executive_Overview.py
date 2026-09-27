@@ -72,7 +72,7 @@ tab_overview, tab_map, tab_trends = st.tabs(["Overview", "Map", "Trends"])
 with tab_overview:
     # Kept to four cards, each a genuine insight or a direct call to action —
     # raw installation counts and duplicate area/capacity figures live on the
-    # Map/Trends tabs and the Sustainable PV Reporting page instead.
+    # Map/Trends tabs and the Sustainability Reporting page instead.
     kpi_row(
         [
             ("Newly observed", f"{n_new:,}", "First observed in the latest imagery with no credible match in the baseline."),

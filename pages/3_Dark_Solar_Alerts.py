@@ -114,7 +114,7 @@ registered_capacity_kw = float(filtered.loc[registered_mask, "estimated_capacity
 kpi_row(
     [
         ("Priority 1 / 2 open", f"{p1p2_open:,}", "Immediate verification or registry reconciliation, still open."),
-        ("Fed back to registration inventory", f"{registered_count:,} ({registered_capacity_kw:,.0f} kW)", "Cases reaching Registered — see Sustainable PV Reporting for the capacity rollup."),
+        ("Fed back to registration inventory", f"{registered_count:,} ({registered_capacity_kw:,.0f} kW)", "Cases reaching Registered — see Sustainability Reporting for the capacity rollup."),
     ]
 )
 tab_queue, tab_review = st.tabs(["Queue", "Review & Decide"])

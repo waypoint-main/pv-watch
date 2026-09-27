@@ -8,7 +8,7 @@
 
 app:
   name: "Solance"
-  tagline: "Distributed Solar Change Intelligence"
+  tagline: "Satellite-powered Unified Digital Registry"
   version: "0.1.0-mvp"
   observation_year_baseline: 2020
   observation_year_latest: 2025

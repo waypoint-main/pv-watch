@@ -22,7 +22,7 @@ DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "setti
 @dataclass(frozen=True)
 class AppMeta:
     name: str = "Solance"
-    tagline: str = "Distributed Solar Change Intelligence"
+    tagline: str = "Satellite-powered Unified Digital Registry"
     version: str = "0.1.0-mvp"
     observation_year_baseline: int = 2020
     observation_year_latest: int = 2025

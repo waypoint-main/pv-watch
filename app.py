@@ -46,7 +46,7 @@ def _render_region_gate() -> None:
     inject_base_style()  # shared fonts/button styling, so the gate matches the rest of the app
     st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
     st.markdown("## Solance")
-    st.caption("Distributed Solar Change Intelligence")
+    st.caption("Satellite-powered Unified Digital Registry")
     st.write("")
     st.markdown("**Enter your region to continue.**")
     with st.form("region_gate_form", clear_on_submit=False):
@@ -72,7 +72,7 @@ overview_page = st.Page("pages/1_Executive_Overview.py", title="Overview")
 explorer_page = st.Page("pages/2_PV_Change_Explorer.py", title="PV Change Explorer")
 alerts_page = st.Page("pages/3_Dark_Solar_Alerts.py", title="Dark Solar Alerts")
 planning_page = st.Page("pages/4_Distribution_Planning.py", title="Distribution Planning")
-reporting_page = st.Page("pages/5_Sustainable_PV_Reporting.py", title="Sustainable Reporting")
+reporting_page = st.Page("pages/5_Sustainable_PV_Reporting.py", title="Sustainability Reporting")
 methodology_page = st.Page("pages/6_Methodology.py", title="Methodology")
 
 pg = st.navigation(
@@ -90,7 +90,7 @@ _chevron = ":material/chevron_right:"
 st.sidebar.page_link(explorer_page, label="PV Change Explorer", icon=_chevron)
 st.sidebar.page_link(alerts_page, label="Dark Solar Alerts", icon=_chevron)
 st.sidebar.page_link(planning_page, label="Distribution Planning", icon=_chevron)
-st.sidebar.page_link(reporting_page, label="Sustainable Reporting", icon=_chevron)
+st.sidebar.page_link(reporting_page, label="Sustainability Reporting", icon=_chevron)
 
 render_sidebar_html('<div class="pv-nav-divider"></div>')
 st.sidebar.page_link(home_page, label="Home")

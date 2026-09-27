@@ -74,7 +74,7 @@ with pillar3:
         f"""
         <div class="pv-card" style="min-height:130px;">
             <div class="pv-kpi-icon" style="margin-bottom:0.5rem;">{_icon_svg("layers", size=18)}</div>
-            <b>Sustainable Reporting</b>
+            <b>Sustainability Reporting</b>
             <p style="color:{INK_MUTED};font-size:0.85rem;margin-top:0.4rem;">
                 Verified capacity, rolled up and export-ready.
             </p>

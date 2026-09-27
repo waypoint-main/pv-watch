@@ -1,4 +1,4 @@
-# Solance — Distributed Solar Change Intelligence
+# Solance — Satellite-powered Unified Digital Registry
 
 Solance is a demonstration Streamlit application showing how temporal geospatial data (two annotated rooftop-solar inventories, 2020 and 2025) can help electricity distribution utilities identify newly observed rooftop PV installations, reconcile them with utility records, and prioritize cases for verification or grid-planning review.
 

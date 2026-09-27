@@ -1,4 +1,4 @@
-"""Page 5 — Sustainable PV Reporting.
+"""Page 5 — Sustainability Reporting.
 
 The client-facing deliverable for the third outcome in Solance's value
 story: "Solar PV capacity estimation (barangay, province level) ->
@@ -30,9 +30,9 @@ from src.ui_components import (
     section_title,
 )
 
-st.set_page_config(page_title="Solance — Sustainable PV Reporting", layout="wide")
+st.set_page_config(page_title="Solance — Sustainability Reporting", layout="wide")
 config = active_config()
-render_app_header(config, "Sustainable PV Reporting")
+render_app_header(config, "Sustainability Reporting")
 
 result = get_pipeline_result()
 if result is None:
@@ -98,8 +98,15 @@ growth_chart_df = pd.DataFrame(
     }
 )
 fig_growth = px.bar(growth_chart_df, x="year", y="Estimated capacity (kW)", text="Estimated capacity (kW)")
-fig_growth.update_traces(marker_color=ACCENT, texttemplate="%{text:,.0f} kW", textposition="outside")
-fig_growth.update_layout(margin=dict(l=10, r=10, t=30, b=10), height=320, xaxis_title=None, showlegend=False)
+fig_growth.update_traces(marker_color=ACCENT, texttemplate="%{text:,.0f} kW", textposition="outside", width=0.32)
+# Explicit category axis + a wide bargap + a fixed category order: without
+# this, the two bars can read as a continuous span "covering" the years
+# between and around 2020 and 2025 rather than two distinct point-in-time
+# snapshots — misleading, since there's no data in between.
+fig_growth.update_xaxes(type="category", categoryorder="array", categoryarray=growth_chart_df["year"].tolist())
+fig_growth.update_layout(
+    margin=dict(l=10, r=10, t=30, b=10), height=320, xaxis_title=None, showlegend=False, bargap=0.6,
+)
 st.plotly_chart(fig_growth, use_container_width=True)
 
 st.divider()

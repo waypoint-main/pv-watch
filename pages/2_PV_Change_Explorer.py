@@ -16,7 +16,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from src.region import active_config
-from src.models import ChangeType, DetectionConfidence, RegistryMatchStatus
+from src.models import ChangeType, DetectionConfidence
 from src.pipeline import build_explorer_table, get_pipeline_result
 from src.review_store import apply_decisions_to_alerts
 from src.ui_components import (
@@ -25,9 +25,6 @@ from src.ui_components import (
     CHANGE_TYPE_EMPHASIS,
     GEOJSON_DETAIL_CLASS,
     GEOJSON_POPUP_STYLE,
-    NEUTRAL_BLUE,
-    NEUTRAL_BLUE_LIGHT,
-    NEUTRAL_TAUPE,
     add_polygon_layer,
     make_base_map,
     render_app_header,
@@ -48,34 +45,6 @@ if result is None:
 
 explorer = build_explorer_table(result, apply_decisions_to_alerts(result.alerts_df))
 explorer["size_class"] = explorer["area_m2"].apply(size_class)
-
-# Same "muted context vs. pop accent" system as CHANGE_TYPE_COLORS: matched
-# records recede since there's nothing to do, while NO_MATCH — an
-# installation visible in imagery with zero registry record, the prime
-# dark-solar suspect — gets the same urgent red used everywhere else in the
-# app for "act now." The three "nothing to do" statuses use NEUTRAL_BLUE /
-# NEUTRAL_BLUE_LIGHT / NEUTRAL_TAUPE rather than grey, since the basemap
-# tile itself is greyscale and a grey fill would disappear into it.
-REG_COLORS = {
-    RegistryMatchStatus.EXACT_MATCH.value: "#2E7D32",
-    RegistryMatchStatus.PROBABLE_MATCH.value: "#7FB37F",
-    RegistryMatchStatus.PENDING.value: "#F2A93B",
-    RegistryMatchStatus.CAPACITY_DISCREPANCY.value: "#E07B00",
-    RegistryMatchStatus.OFF_GRID.value: NEUTRAL_BLUE,
-    RegistryMatchStatus.AMBIGUOUS.value: NEUTRAL_TAUPE,
-    RegistryMatchStatus.NO_MATCH.value: "#C4291C",
-    "Not applicable (2020-only record)": NEUTRAL_BLUE_LIGHT,
-}
-REG_EMPHASIS = {
-    RegistryMatchStatus.EXACT_MATCH.value: (1.2, 0.4),
-    RegistryMatchStatus.PROBABLE_MATCH.value: (1.2, 0.4),
-    RegistryMatchStatus.PENDING.value: (1.8, 0.6),
-    RegistryMatchStatus.CAPACITY_DISCREPANCY.value: (2.0, 0.65),
-    RegistryMatchStatus.OFF_GRID.value: (1.0, 0.35),
-    RegistryMatchStatus.AMBIGUOUS.value: (1.2, 0.4),
-    RegistryMatchStatus.NO_MATCH.value: (2.5, 0.78),
-    "Not applicable (2020-only record)": (0.8, 0.25),
-}
 
 # --- Filters (top bar, not sidebar) --------------------------------------------
 with st.expander("Filters", expanded=False):
@@ -113,14 +82,14 @@ st.caption(f"**{len(filtered):,}** of {len(explorer):,} cases match the current 
 tab_map, tab_compare, tab_table = st.tabs(["Map", "Compare 2020 → 2025", "Case table"])
 
 
-# Kept intentionally short (6 fields) — this is a scan-at-a-glance popup, not
-# the full case record. Click through to the Case table tab, or open the
-# alert on Dark Solar Alerts, for area/registry/network/classification detail.
+# Kept intentionally short — this is a scan-at-a-glance popup, not the full
+# case record. Click through to the Case table tab, or open the alert on
+# Dark Solar Alerts, for area/network/classification detail.
 popup_fields = [
-    "display_installation_id", "change_type", "area_2025_m2", "estimated_capacity_kw", "registry_match_status",
+    "display_installation_id", "change_type", "area_2025_m2", "estimated_capacity_kw",
 ]
 popup_aliases = [
-    "Installation ID", "Change type", "2025 area (m²)", "Est. capacity (kW)", "Registry status",
+    "Installation ID", "Change type", "2025 area (m²)", "Est. capacity (kW)",
 ]
 available_fields = [f for f in popup_fields if f in filtered.columns]
 available_aliases = [a for a, f in zip(popup_aliases, popup_fields) if f in filtered.columns]
@@ -128,7 +97,7 @@ available_aliases = [a for a, f in zip(popup_aliases, popup_fields) if f in filt
 with tab_map:
     mode = st.radio(
         "Map mode",
-        ["2020 inventory", "2025 inventory", "Newly observed", "Change classification", "Registry-match status"],
+        ["2020 inventory", "2025 inventory", "Newly observed", "Change classification"],
         horizontal=True,
     )
 
@@ -163,7 +132,7 @@ with tab_map:
                 ),
             ).add_to(m)
         render_map_legend([("Newly observed", CHANGE_TYPE_COLORS[ChangeType.NEWLY_OBSERVED.value])])
-    elif mode == "Change classification":
+    else:  # Change classification
         change_types_in_order = [
             ChangeType.EXISTING.value, ChangeType.POTENTIALLY_REMOVED.value, ChangeType.UNCERTAIN.value,
             ChangeType.EXPANDED.value, ChangeType.NEWLY_OBSERVED.value,
@@ -184,23 +153,6 @@ with tab_map:
             ).add_to(m)
         folium.LayerControl(collapsed=False).add_to(m)
         render_map_legend([(ct, CHANGE_TYPE_COLORS[ct]) for ct in change_types_in_order])
-    else:  # Registry-match status
-        for status, color in REG_COLORS.items():
-            layer = filtered[filtered["registry_match_status"] == status]
-            if layer.empty:
-                continue
-            weight, fill_opacity = REG_EMPHASIS.get(status, (1.5, 0.55))
-            folium.GeoJson(
-                layer.to_json(),
-                name=status,
-                style_function=lambda _f, c=color, w=weight, fo=fill_opacity: {"fillColor": c, "color": c, "weight": w, "fillOpacity": fo},
-                popup=folium.GeoJsonPopup(
-                    fields=available_fields, aliases=available_aliases, max_width=320,
-                    style=GEOJSON_POPUP_STYLE, class_name=GEOJSON_DETAIL_CLASS,
-                ),
-            ).add_to(m)
-        folium.LayerControl(collapsed=False).add_to(m)
-        render_map_legend([(status, color) for status, color in REG_COLORS.items()])
 
     st_folium(m, use_container_width=True, height=560, key="explorer_map", returned_objects=[])
     st.caption("Click any installation for full case detail.")

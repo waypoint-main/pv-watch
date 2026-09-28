@@ -100,7 +100,7 @@ filtered = alerts_df[
 state_counts = filtered["review_status"].value_counts()
 render_case_queue_funnel(state_counts)
 
-p1p2_open = int(
+urgent_open = int(
     (
         filtered["priority"].isin([p for p in filtered["priority"].unique() if p.startswith("Priority 1") or p.startswith("Priority 2")])
         & (~filtered["review_status"].isin(REVIEW_END_STATE_VALUES))
@@ -110,10 +110,13 @@ registered_mask = filtered["review_status"] == ReviewAction.REGISTERED.value
 registered_count = int(registered_mask.sum())
 registered_capacity_kw = float(filtered.loc[registered_mask, "estimated_capacity_kw"].sum())
 # Just the two numbers not already visible in the state-breakdown row above:
-# urgency (still open + high priority) and the registration-loop payoff.
+# urgency (still open) and the registration-loop payoff. Card label is kept
+# generic ("Open, needs verification") rather than naming the Priority 1/2
+# tiers directly, since PV Change Explorer no longer surfaces priority
+# scoring in this client build — keep the language consistent app-wide.
 kpi_row(
     [
-        ("Priority 1 / 2 open", f"{p1p2_open:,}", "Immediate verification or registry reconciliation, still open."),
+        ("Open, needs verification", f"{urgent_open:,}", "Immediate verification or registry reconciliation, still open."),
         ("Fed back to registration inventory", f"{registered_count:,} ({registered_capacity_kw:,.0f} kW)", "Cases reaching Registered — see Sustainability Reporting for the capacity rollup."),
     ]
 )

@@ -41,6 +41,11 @@ NEUTRAL_BLUE = "#6E90A8"        # medium — administrative / non-actionable con
 NEUTRAL_BLUE_LIGHT = "#A9C2D0"  # pale — lowest priority / historical-only, still visible
 NEUTRAL_TAUPE = "#A69684"       # warm — a second, distinguishable "unclear" tone for maps
 # that already use NEUTRAL_BLUE for something else in the same legend
+BASELINE_HIGHLIGHT_BLUE = "#1565C0"  # vivid, higher-contrast blue for a single-year 2020
+# baseline layer specifically (PV Change Explorer's "2020 inventory" map mode and the
+# Compare tab's left panel) — NEUTRAL_BLUE stays the shared "existing/non-actionable"
+# tone used elsewhere in the app; this is only for when 2020 needs to stand out on its
+# own against the greyscale basemap, not a change to that shared semantic.
 
 # NOTE on CHANGE_TYPE_COLORS: Potentially-removed and Uncertain were
 # originally red-brown (#A13D3D) and gold-brown (#B8934A) — both close

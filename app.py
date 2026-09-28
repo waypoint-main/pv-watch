@@ -76,10 +76,14 @@ explorer_page = st.Page("pages/2_PV_Change_Explorer.py", title="PV Change Explor
 alerts_page = st.Page("pages/3_Dark_Solar_Alerts.py", title="Dark Solar Alerts")
 planning_page = st.Page("pages/4_Distribution_Planning.py", title="Distribution Planning")
 reporting_page = st.Page("pages/5_Sustainable_PV_Reporting.py", title="Sustainability Reporting")
-methodology_page = st.Page("pages/6_Methodology.py", title="Methodology")
+# Methodology is intentionally left out of this client-shared build's
+# navigation (see the Makati-only / no-exports pass above) — it documents
+# internal thresholds and capacity assumptions that don't need to be in
+# front of a client. pages/6_Methodology.py itself is untouched, so
+# restoring it here is a one-line change.
 
 pg = st.navigation(
-    [home_page, overview_page, explorer_page, alerts_page, planning_page, reporting_page, methodology_page],
+    [home_page, overview_page, explorer_page, alerts_page, planning_page, reporting_page],
     position="hidden",
 )
 
@@ -97,7 +101,6 @@ st.sidebar.page_link(reporting_page, label="Sustainability Reporting", icon=_che
 
 render_sidebar_html('<div class="pv-nav-divider"></div>')
 st.sidebar.page_link(home_page, label="Home")
-st.sidebar.page_link(methodology_page, label="Methodology")
 
 render_sidebar_html('<div class="pv-nav-divider"></div>')
 

@@ -16,10 +16,11 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from src.region import active_config
-from src.models import ChangeType, DetectionConfidence, Priority, RegistryMatchStatus
+from src.models import ChangeType, DetectionConfidence, RegistryMatchStatus
 from src.pipeline import build_explorer_table, get_pipeline_result
 from src.review_store import apply_decisions_to_alerts
 from src.ui_components import (
+    BASELINE_HIGHLIGHT_BLUE,
     CHANGE_TYPE_COLORS,
     CHANGE_TYPE_EMPHASIS,
     GEOJSON_DETAIL_CLASS,
@@ -27,8 +28,6 @@ from src.ui_components import (
     NEUTRAL_BLUE,
     NEUTRAL_BLUE_LIGHT,
     NEUTRAL_TAUPE,
-    PRIORITY_COLORS,
-    PRIORITY_EMPHASIS,
     add_polygon_layer,
     make_base_map,
     render_app_header,
@@ -88,23 +87,17 @@ with st.expander("Filters", expanded=False):
     sel_change_type = row1[2].multiselect("Change type", [c.value for c in ChangeType], default=[c.value for c in ChangeType])
 
     row2 = st.columns(3)
-    registry_options = sorted(explorer["registry_match_status"].dropna().unique().tolist())
-    sel_registry = row2[0].multiselect("Registry status", registry_options, default=registry_options)
-    priority_options = sorted(explorer["priority"].dropna().unique().tolist())
-    sel_priority = row2[1].multiselect("Alert priority", priority_options, default=priority_options)
     review_options = sorted(explorer["review_status"].dropna().unique().tolist())
-    sel_review = row2[2].multiselect("Review status", review_options, default=review_options)
-
-    row3 = st.columns(3)
-    sel_size = row3[0].multiselect(
+    sel_review = row2[0].multiselect("Review status", review_options, default=review_options)
+    sel_size = row2[1].multiselect(
         "Size class", ["Small (<20 m²)", "Medium (20–50 m²)", "Large (50–90 m²)", "Very large (90+ m²)"],
         default=["Small (<20 m²)", "Medium (20–50 m²)", "Large (50–90 m²)", "Very large (90+ m²)"],
     )
-    sel_confidence = row3[1].multiselect(
+    sel_confidence = row2[2].multiselect(
         "Detection confidence", [c.value for c in DetectionConfidence], default=[c.value for c in DetectionConfidence]
     )
     max_capacity = float(explorer["estimated_capacity_kw"].max()) if not explorer.empty else 20.0
-    sel_capacity = row3[2].slider("Estimated capacity (kW)", 0.0, max(max_capacity, 1.0), (0.0, max(max_capacity, 1.0)))
+    sel_capacity = st.slider("Estimated capacity (kW)", 0.0, max(max_capacity, 1.0), (0.0, max(max_capacity, 1.0)))
 
 filtered = explorer[
     explorer["municipality"].isin(sel_muni)
@@ -113,8 +106,6 @@ filtered = explorer[
     & explorer["size_class"].isin(sel_size)
     & explorer["estimated_capacity_kw"].fillna(0).between(sel_capacity[0], sel_capacity[1])
     & explorer["detection_confidence"].isin(sel_confidence)
-    & explorer["registry_match_status"].isin(sel_registry)
-    & explorer["priority"].isin(sel_priority)
     & explorer["review_status"].isin(sel_review)
 ]
 st.caption(f"**{len(filtered):,}** of {len(explorer):,} cases match the current filters.")
@@ -126,10 +117,10 @@ tab_map, tab_compare, tab_table = st.tabs(["Map", "Compare 2020 → 2025", "Case
 # the full case record. Click through to the Case table tab, or open the
 # alert on Dark Solar Alerts, for area/registry/network/classification detail.
 popup_fields = [
-    "display_installation_id", "change_type", "area_2025_m2", "estimated_capacity_kw", "registry_match_status", "priority",
+    "display_installation_id", "change_type", "area_2025_m2", "estimated_capacity_kw", "registry_match_status",
 ]
 popup_aliases = [
-    "Installation ID", "Change type", "2025 area (m²)", "Est. capacity (kW)", "Registry status", "Alert priority",
+    "Installation ID", "Change type", "2025 area (m²)", "Est. capacity (kW)", "Registry status",
 ]
 available_fields = [f for f in popup_fields if f in filtered.columns]
 available_aliases = [a for a, f in zip(popup_aliases, popup_fields) if f in filtered.columns]
@@ -137,7 +128,7 @@ available_aliases = [a for a, f in zip(popup_aliases, popup_fields) if f in filt
 with tab_map:
     mode = st.radio(
         "Map mode",
-        ["2020 inventory", "2025 inventory", "Newly observed", "Change classification", "Registry-match status", "Alert priority"],
+        ["2020 inventory", "2025 inventory", "Newly observed", "Change classification", "Registry-match status"],
         horizontal=True,
     )
 
@@ -147,10 +138,10 @@ with tab_map:
         layer = result.installations_2020.copy()
         layer["size_class"] = layer["area_m2"].apply(size_class)
         layer = layer[layer["barangay"].isin(sel_brgy) & layer["municipality"].isin(sel_muni)]
-        add_polygon_layer(m, layer, CHANGE_TYPE_COLORS[ChangeType.EXISTING.value], f"{config.app.observation_year_baseline} inventory",
+        add_polygon_layer(m, layer, BASELINE_HIGHLIGHT_BLUE, f"{config.app.observation_year_baseline} inventory",
                            tooltip_fields=["installation_id", "barangay", "area_m2", "estimated_capacity_kw"],
                            tooltip_aliases=["Installation ID", "Barangay", "Area (m²)", "Est. capacity (kW)"])
-        render_map_legend([(f"{config.app.observation_year_baseline} installation", CHANGE_TYPE_COLORS[ChangeType.EXISTING.value])])
+        render_map_legend([(f"{config.app.observation_year_baseline} installation", BASELINE_HIGHLIGHT_BLUE)])
     elif mode == "2025 inventory":
         layer = result.installations_2025.copy()
         layer = layer[layer["barangay"].isin(sel_brgy) & layer["municipality"].isin(sel_muni)]
@@ -193,7 +184,7 @@ with tab_map:
             ).add_to(m)
         folium.LayerControl(collapsed=False).add_to(m)
         render_map_legend([(ct, CHANGE_TYPE_COLORS[ct]) for ct in change_types_in_order])
-    elif mode == "Registry-match status":
+    else:  # Registry-match status
         for status, color in REG_COLORS.items():
             layer = filtered[filtered["registry_match_status"] == status]
             if layer.empty:
@@ -210,23 +201,6 @@ with tab_map:
             ).add_to(m)
         folium.LayerControl(collapsed=False).add_to(m)
         render_map_legend([(status, color) for status, color in REG_COLORS.items()])
-    else:  # Alert priority
-        for p, color in PRIORITY_COLORS.items():
-            layer = filtered[filtered["priority"] == p]
-            if layer.empty:
-                continue
-            weight, fill_opacity = PRIORITY_EMPHASIS.get(p, (1.5, 0.55))
-            folium.GeoJson(
-                layer.to_json(),
-                name=p,
-                style_function=lambda _f, c=color, w=weight, fo=fill_opacity: {"fillColor": c, "color": c, "weight": w, "fillOpacity": fo},
-                popup=folium.GeoJsonPopup(
-                    fields=available_fields, aliases=available_aliases, max_width=320,
-                    style=GEOJSON_POPUP_STYLE, class_name=GEOJSON_DETAIL_CLASS,
-                ),
-            ).add_to(m)
-        folium.LayerControl(collapsed=False).add_to(m)
-        render_map_legend([(p, color) for p, color in PRIORITY_COLORS.items()])
 
     st_folium(m, use_container_width=True, height=560, key="explorer_map", returned_objects=[])
     st.caption("Click any installation for full case detail.")
@@ -242,7 +216,7 @@ with tab_compare:
         ]
         w2020, fo2020 = CHANGE_TYPE_EMPHASIS[ChangeType.EXISTING.value]
         add_polygon_layer(
-            m1, layer_2020, CHANGE_TYPE_COLORS[ChangeType.EXISTING.value], "2020",
+            m1, layer_2020, BASELINE_HIGHLIGHT_BLUE, "2020",
             tooltip_fields=["installation_id", "area_m2", "estimated_capacity_kw"],
             tooltip_aliases=["Installation ID", "Area (m²)", "Est. capacity (kW)"],
             weight=w2020, fill_opacity=fo2020,
@@ -267,8 +241,8 @@ with tab_table:
     section_title(f"Filtered Cases ({len(filtered):,})")
     display_cols = [c for c in [
         "display_installation_id", "change_type", "municipality", "barangay", "area_2020_m2", "area_2025_m2",
-        "area_change_percent", "estimated_capacity_kw", "detection_confidence", "registry_match_status",
-        "transformer_id", "feeder_id", "priority", "review_status",
+        "area_change_percent", "estimated_capacity_kw", "detection_confidence",
+        "transformer_id", "feeder_id", "review_status",
     ] if c in filtered.columns]
     st.dataframe(filtered[display_cols], use_container_width=True, hide_index=True, height=460)
 

@@ -3,8 +3,10 @@
 Map-first exploration of the 2020 vs 2025 inventories. Filters live in a
 single collapsible bar at the top of the page (not the sidebar) and apply
 across every tab; each tab drives one specific exploration action: view the
-current map mode, compare years side by side, browse the case table, or
-export the filtered data.
+current map mode, compare years side by side, or browse the case table.
+
+No bulk-export tab is exposed here by design (client-shared builds should
+not let a viewer download the underlying proprietary geometry/data).
 """
 
 from __future__ import annotations
@@ -14,7 +16,6 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from src.region import active_config
-from src.export_utils import build_export_metadata, geodataframe_to_geojson_bytes
 from src.models import ChangeType, DetectionConfidence, Priority, RegistryMatchStatus
 from src.pipeline import build_explorer_table, get_pipeline_result
 from src.review_store import apply_decisions_to_alerts
@@ -118,7 +119,7 @@ filtered = explorer[
 ]
 st.caption(f"**{len(filtered):,}** of {len(explorer):,} cases match the current filters.")
 
-tab_map, tab_compare, tab_table, tab_export = st.tabs(["Map", "Compare 2020 → 2025", "Case table", "Exports"])
+tab_map, tab_compare, tab_table = st.tabs(["Map", "Compare 2020 → 2025", "Case table"])
 
 
 # Kept intentionally short (6 fields) — this is a scan-at-a-glance popup, not
@@ -270,23 +271,5 @@ with tab_table:
         "transformer_id", "feeder_id", "priority", "review_status",
     ] if c in filtered.columns]
     st.dataframe(filtered[display_cols], use_container_width=True, hide_index=True, height=460)
-
-with tab_export:
-    section_title("Exports")
-    metadata = build_export_metadata(config, result.is_synthetic)
-    exp1, exp2 = st.columns(2)
-    with exp1:
-        change_geojson = geodataframe_to_geojson_bytes(filtered.drop(columns=["size_class"], errors="ignore"), metadata)
-        st.download_button(
-            "Change inventory (GeoJSON)", data=change_geojson, file_name="pv_watch_change_inventory.geojson",
-            mime="application/geo+json",
-        )
-    with exp2:
-        new_only = filtered[filtered["change_type"] == ChangeType.NEWLY_OBSERVED.value].drop(columns=["size_class"], errors="ignore")
-        new_geojson = geodataframe_to_geojson_bytes(new_only, metadata)
-        st.download_button(
-            "Newly observed installations (GeoJSON)", data=new_geojson, file_name="pv_watch_newly_observed.geojson",
-            mime="application/geo+json",
-        )
 
 render_footer(config)

@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.region import REGION_LABELS, active_config, active_region, log_out, set_region
+from src.region import active_config, set_region
 from src.ui_components import inject_base_style, render_sidebar_brand, render_sidebar_html
 
 
@@ -61,10 +61,13 @@ def _render_region_gate() -> None:
             st.error("Unrecognized region. Enter **makati** or **laguna**.")
 
 
-if active_region() is None:
-    _render_region_gate()
-    st.stop()
-
+# --- Client-facing build note ----------------------------------------------
+# This deployment is scoped to Makati City only. The multi-region login gate
+# (Makati vs. Laguna) is intentionally bypassed below so a client viewing
+# this app never sees, or has any path to switch into, the separate Laguna
+# dataset. ``_render_region_gate`` above is kept in the source rather than
+# deleted, so restoring multi-region access later is a one-line change.
+set_region("makati")
 config = active_config()
 
 home_page = st.Page("pages/0_Home.py", title="Home", default=True)
@@ -96,13 +99,7 @@ render_sidebar_html('<div class="pv-nav-divider"></div>')
 st.sidebar.page_link(home_page, label="Home")
 st.sidebar.page_link(methodology_page, label="Methodology")
 
-# --- Active region indicator + switcher -------------------------------------
 render_sidebar_html('<div class="pv-nav-divider"></div>')
-_region_key = active_region()
-st.sidebar.caption(f"Region: **{REGION_LABELS.get(_region_key, _region_key)}**")
-if st.sidebar.button("Switch region", use_container_width=True):
-    log_out()
-    st.rerun()
 
 # Company/product brand credit — anchored to the bottom of the sidebar
 # (lower-left of the screen), below all navigation, not above it.

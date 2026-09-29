@@ -78,14 +78,14 @@ with tab_overview:
             ("Newly observed", f"{n_new:,}", "First observed in the latest imagery with no credible match in the baseline."),
             ("Installation count growth", f"{pct_growth:+.0f}%", "(2025 count − 2020 count) / 2020 count."),
             ("Estimated new capacity", f"{new_capacity_kw:,.1f} kW (est.)", "Area × configurable kW/m² factor — an estimate, not utility-confirmed."),
-            ("Unresolved P1/P2 alerts", f"{unresolved_high_priority:,}", "Priority 1 or 2 alerts whose case is still open (not Registered or False positive)."),
+            ("Unresolved alerts", f"{unresolved_high_priority:,}", "High-urgency alerts whose case is still open (not Registered or False positive)."),
         ]
     )
     st.caption(f"Top growth zone: **{top_zone}**")
 
     if unresolved_high_priority > 0:
         st.warning(
-            f"**{unresolved_high_priority} Priority 1/2 alert(s)** are unresolved — open the "
+            f"**{unresolved_high_priority} alert(s)** are unresolved — open the "
             "**Dark Solar Alerts** page to review and decide on them."
         )
 

@@ -45,7 +45,6 @@ from src.ui_components import (
     add_polygon_layer,
     kpi_row,
     make_base_map,
-    priority_badge_html,
     render_app_header,
     render_case_queue_funnel,
     render_case_stepper,
@@ -82,16 +81,16 @@ STATE_ORDER = [
 # --- Filters (top bar, not sidebar) --------------------------------------------
 with st.expander("Filters", expanded=False):
     f1, f2, f3 = st.columns(3)
-    sel_priority = f1.multiselect("Priority", sorted(alerts_df["priority"].unique()), default=sorted(alerts_df["priority"].unique()))
-    sel_change = f2.multiselect("Change type", sorted(alerts_df["change_type"].unique()), default=sorted(alerts_df["change_type"].unique()))
-    sel_review = f3.multiselect("Case state", sorted(alerts_df["review_status"].unique()), default=sorted(alerts_df["review_status"].unique()))
-    f4, f5 = st.columns(2)
-    sel_registry = f4.multiselect("Registry status", sorted(alerts_df["registry_match_status"].unique()), default=sorted(alerts_df["registry_match_status"].unique()))
-    sel_muni = f5.multiselect("Municipality", sorted(alerts_df["municipality"].unique()), default=sorted(alerts_df["municipality"].unique()))
+    sel_change = f1.multiselect("Change type", sorted(alerts_df["change_type"].unique()), default=sorted(alerts_df["change_type"].unique()))
+    sel_review = f2.multiselect("Case state", sorted(alerts_df["review_status"].unique()), default=sorted(alerts_df["review_status"].unique()))
+    sel_registry = f3.multiselect("Registry status", sorted(alerts_df["registry_match_status"].unique()), default=sorted(alerts_df["registry_match_status"].unique()))
+    sel_muni = st.multiselect("Municipality", sorted(alerts_df["municipality"].unique()), default=sorted(alerts_df["municipality"].unique()))
 
+# Still sorted by priority/priority_score internally (most urgent first) even
+# though "Priority" is no longer a visible filter, column, or label anywhere
+# on this page — it's queue ordering only, not a displayed score.
 filtered = alerts_df[
-    alerts_df["priority"].isin(sel_priority)
-    & alerts_df["change_type"].isin(sel_change)
+    alerts_df["change_type"].isin(sel_change)
     & alerts_df["review_status"].isin(sel_review)
     & alerts_df["registry_match_status"].isin(sel_registry)
     & alerts_df["municipality"].isin(sel_muni)
@@ -124,7 +123,7 @@ tab_queue, tab_review = st.tabs(["Queue", "Review & Decide"])
 
 display_cols = [
     "alert_id", "change_type", "municipality", "barangay", "area_m2", "estimated_capacity_kw",
-    "registry_match_status", "transformer_id", "priority", "detection_confidence", "review_status", "assigned_to",
+    "transformer_id", "detection_confidence", "review_status", "assigned_to",
 ]
 
 with tab_queue:
@@ -177,7 +176,7 @@ with tab_review:
 
     def _alert_option_label(aid: str) -> str:
         r = state_filtered.loc[state_filtered["alert_id"] == aid].iloc[0]
-        return f"{aid} — {r['priority']} · {r['estimated_capacity_kw']:,.1f} kW · {r['barangay']}"
+        return f"{aid} — {r['estimated_capacity_kw']:,.1f} kW · {r['barangay']}"
 
     # Keyed per state tab so switching tabs and back remembers your spot,
     # and so it falls forward to the next open case in the same queue (not
@@ -234,8 +233,7 @@ with tab_review:
 
     with col_detail:
         st.markdown(f"#### {alert_row['alert_id']} — {alert_row['change_type']}", unsafe_allow_html=True)
-        badge_row = f"{priority_badge_html(alert_row['priority'])} {review_state_badge_html(chosen_state.value)}"
-        st.markdown(badge_row, unsafe_allow_html=True)
+        st.markdown(review_state_badge_html(chosen_state.value), unsafe_allow_html=True)
         st.markdown(f"**Detection window:** {config.app.observation_date_baseline} → {config.app.observation_date_latest}")
         area_2020 = safe_number(change_row.get("area_2020_m2"))
         area_2025 = safe_number(change_row.get("area_2025_m2"))
@@ -262,9 +260,6 @@ with tab_review:
 
         st.markdown("**Classification reason**")
         st.info(change_row["classification_reason"])
-
-        st.markdown("**Priority reason**")
-        st.info(alert_row["priority_reason"])
 
     st.divider()
     col_history, col_action = st.columns([1, 1])

@@ -366,6 +366,26 @@ def build_explorer_table(result: PipelineResult, alerts_df: Optional[pd.DataFram
     return gpd.GeoDataFrame(combined, geometry="geometry", crs="EPSG:4326")
 
 
+def local_kmz_folder_available(config: AppConfig) -> bool:
+    """Whether both years' local KMZ folders exist and contain at least one
+    ``.kmz`` file, for the given config.
+
+    Shared by ``pages/0_Home.py`` (to default the data-source radio) and
+    :func:`get_pipeline_result` (so a session landing on any page *other*
+    than Home first — a bookmarked URL, a mid-navigation refresh — still
+    defaults to local KMZ, not demo data, whenever local data is present).
+    Two separate copies of this check previously existed and could drift
+    apart; this was the actual cause of "sometimes it's demo data" — Home.py
+    correctly defaulted to local_folder, but get_pipeline_result() fell back
+    to a hardcoded "demo" whenever session state hadn't been initialized by
+    Home.py yet in that session.
+    """
+    project_root = Path(__file__).resolve().parent.parent
+    dir_2020 = project_root / config.data_sources.local_kmz_2020_dir
+    dir_2025 = project_root / config.data_sources.local_kmz_2025_dir
+    return dir_2020.is_dir() and dir_2025.is_dir() and any(dir_2020.glob("*.kmz")) and any(dir_2025.glob("*.kmz"))
+
+
 def get_pipeline_result() -> Optional[PipelineResult]:
     """Fetch the pipeline result for the mode/files currently in session state.
 
@@ -375,13 +395,14 @@ def get_pipeline_result() -> Optional[PipelineResult]:
     each region's local KMZ folder, municipality label, and thresholds are
     used, and so the two regions get separate cache entries.
     """
-    mode = st.session_state.get("pv_watch_mode", "demo")
+    config_path = active_config_path()
+    default_mode = "local_folder" if local_kmz_folder_available(load_config(config_path)) else "demo"
+    mode = st.session_state.get("pv_watch_mode", default_mode)
     kmz_2020 = st.session_state.get("pv_watch_kmz_2020_bytes")
     kmz_2025 = st.session_state.get("pv_watch_kmz_2025_bytes")
     name_2020 = st.session_state.get("pv_watch_kmz_2020_name", "")
     name_2025 = st.session_state.get("pv_watch_kmz_2025_name", "")
     crs_override = st.session_state.get("pv_watch_crs_override")
-    config_path = active_config_path()
 
     if mode == "upload" and (not kmz_2020 or not kmz_2025):
         return None

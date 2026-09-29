@@ -21,7 +21,7 @@ from pathlib import Path
 import streamlit as st
 
 from src.region import active_config
-from src.pipeline import get_pipeline_result
+from src.pipeline import get_pipeline_result, local_kmz_folder_available
 from src.ui_components import (
     INK_MUTED,
     _icon_svg,
@@ -87,9 +87,10 @@ st.divider()
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DIR_2020 = PROJECT_ROOT / config.data_sources.local_kmz_2020_dir
 DIR_2025 = PROJECT_ROOT / config.data_sources.local_kmz_2025_dir
-local_folder_available = (
-    DIR_2020.is_dir() and DIR_2025.is_dir() and any(DIR_2020.glob("*.kmz")) and any(DIR_2025.glob("*.kmz"))
-)
+# Shared with get_pipeline_result()'s own default-mode fallback (src/pipeline.py)
+# so the two checks can't drift apart again — that drift was the actual bug
+# behind "sometimes it's demo data instead of local KMZ."
+local_folder_available = local_kmz_folder_available(config)
 
 if "pv_watch_mode" not in st.session_state:
     st.session_state["pv_watch_mode"] = "local_folder" if local_folder_available else "demo"
